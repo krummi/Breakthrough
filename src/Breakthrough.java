@@ -20,15 +20,16 @@ public class Breakthrough {
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
         State            state             = new BreakthroughState( 8, 8 );
-        Agent            agents[]          = { new AgentMinimax(), new AgentMinimax() };
+        Agent            agents[]          = { new AgentAlphaBeta(), new AgentMCTS() };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
-        long             maxSearchLimit    = 0;     // 0 = limit disabled.
-        long             maxSearchTimeMsec = 1000;     // 0 = limit disabled.
+        long             maxSearchLimit    = 0;        // 0 = limit disabled.
+        long             maxSearchTimeMsec = 2000;     // 0 = limit disabled.
         long             maxSearchNodes    = 0;
         boolean          silenceAgent      = false;
         boolean          silenceDisplay    = false;
 
         agents[0].setSilence( silenceAgent );
+        agents[1].setSilence(silenceAgent);
         agents[0].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
         agents[1].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
 
@@ -265,8 +266,9 @@ public class Breakthrough {
             Agent agent = agents[ toMove ];
             Move move = agent.playMove( state );
             state.make( move );
-            //System.out.print( "bestmove " );
-            //System.out.println( move.toStr() );
+            System.out.print( "bestmove " );
+            System.out.println( move.toStr() );
+            state.display();
             toMove = ( toMove==0 ? 1 : 0 );
         }
         int lastMove = (toMove == 0) ? 1 : 0;

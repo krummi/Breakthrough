@@ -5,8 +5,6 @@
  */
 public interface Agent
 {
-    enum Thinklimit { Depth, Simulations, Nodes, Time };
-
     // Agent does not print any output.
     public void setSilence( boolean on );
 
