@@ -40,7 +40,7 @@ public class AgentMCTS implements Agent {
         m_simulations = 0;
 
         // TODO: Deterministic mode!
-        random.setSeed(3);
+        // random.setSeed(3);
 
         Move move = UCTSearch(state);
         System.out.println("MCTS makes: " + move.toStr());
