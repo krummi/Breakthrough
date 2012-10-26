@@ -123,4 +123,8 @@ public class AgentMinimax implements Agent
         return bestValue;
     }
 
+    @Override
+    public String getName() {
+        return "MiniMax";
+    }
 }

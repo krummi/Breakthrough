@@ -13,4 +13,6 @@ public interface Agent
 
     // Pick a move to play, return null if terminal position.
     public Move playMove( State state );
+
+    public String getName();
 }

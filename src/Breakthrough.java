@@ -9,6 +9,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -19,7 +20,10 @@ public class Breakthrough {
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
         State            state             = new BreakthroughState( 8, 8 );
-        Agent            agents[]          = { new AgentMinimax(), new AgentMCTS() };
+        Agent            agents[]          = {
+                new AgentMCTS(AgentMCTS.RootMoveSelector.HighestAverage),
+                new AgentMinimax()
+        };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
         long             maxSearchLimit    = 0;        // 0 = limit disabled.
         long             maxSearchTimeMsec = 2000;     // 0 = limit disabled.
@@ -260,6 +264,9 @@ public class Breakthrough {
     private static void playAMatch( Agent agents[], int goesFirst, State state, int [] outcome )
     {
         int toMove = goesFirst;
+        System.out.println(String.format(
+                ">>>>>>>>>>> %s (white) vs. %s <<<<<<<<<<<",
+                agents[toMove].getName(), agents[toMove ^ 1].getName()));
         state.reset();
         while ( !state.isTerminal() ) {
             Agent agent = agents[ toMove ];

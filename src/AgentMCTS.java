@@ -8,8 +8,16 @@ import java.util.Random;
  */
 public class AgentMCTS implements Agent {
 
+    public enum RootMoveSelector {
+        MostVisits,
+        HighestAverage
+    }
+
     private static final Random random = new Random();
     private static final double EXPLORATION_CONSTANT = 5000;
+
+    // Configuration stuff
+    private RootMoveSelector rootMoveSelector;
 
     private boolean m_silent;
     private long    m_depthLimit;
@@ -20,8 +28,13 @@ public class AgentMCTS implements Agent {
     private long m_msec;
     private long m_simulations;
 
-    AgentMCTS () {
+    public AgentMCTS () {
         m_silent = true;
+        rootMoveSelector = RootMoveSelector.MostVisits;
+    }
+
+    public AgentMCTS(RootMoveSelector rms) {
+        this.rootMoveSelector = rms;
     }
 
     public void setSilence(boolean on) {
@@ -66,7 +79,18 @@ public class AgentMCTS implements Agent {
             System.out.println(v0.getChild(i).move.toStr() + ": " + v0.getChild(i).value + " / " + v0.getChild(i).visits + " = " + (v0.getChild(i).value / v0.getChild(i).visits));
         }
 
-        System.out.println(bestChild(v0, 0).value);
+        if (rootMoveSelector == RootMoveSelector.MostVisits) {
+            Move bestMove = null;
+            int mostVisits = Integer.MIN_VALUE;
+            for (int i = 0; i < v0.getChildCount(); i++) {
+                if (v0.getChild(i).visits > mostVisits) {
+                    mostVisits = v0.getChild(i).visits;
+                    bestMove = v0.getChild(i).move;
+                }
+            }
+            assert bestMove != null;
+        }
+        // else rms = HighestAverage:
         return bestChild(v0, 0).move;
     }
 
@@ -191,6 +215,11 @@ public class AgentMCTS implements Agent {
             }
         }
         return false;
+    }
+
+    public String getName() {
+        return String.format("MCTS (rms: %s, c: %.0f)",
+                rootMoveSelector.toString(), EXPLORATION_CONSTANT);
     }
 
 }

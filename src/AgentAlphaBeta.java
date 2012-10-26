@@ -129,4 +129,9 @@ public class AgentAlphaBeta implements Agent
         return false;
     }
 
+    @Override
+    public String getName() {
+        return "AlphaBeta";
+    }
+
 }

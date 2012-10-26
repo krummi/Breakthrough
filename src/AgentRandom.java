@@ -39,4 +39,10 @@ public class AgentRandom implements Agent
 
     private boolean m_silent;
     private Random m_rng;
+
+    @Override
+    public String getName() {
+        return "Random";
+    }
+
 }
