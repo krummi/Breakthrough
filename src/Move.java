@@ -43,5 +43,9 @@ public class Move
             && ( capture  == other.capture  );
     }
 
+    public String toString() {
+        return toStr();
+    }
+
 }
 

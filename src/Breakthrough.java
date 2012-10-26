@@ -16,11 +16,10 @@ public class Breakthrough {
 
     public static void main( String[] args )
     {
-
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
         State            state             = new BreakthroughState( 8, 8 );
-        Agent            agents[]          = { new AgentAlphaBeta(), new AgentMCTS() };
+        Agent            agents[]          = { new AgentMinimax(), new AgentMCTS() };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
         long             maxSearchLimit    = 0;        // 0 = limit disabled.
         long             maxSearchTimeMsec = 2000;     // 0 = limit disabled.

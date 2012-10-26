@@ -7,10 +7,9 @@ import java.util.Random;
  *
  */
 public class AgentMCTS implements Agent {
+
     private static final Random random = new Random();
-    private static final double EXPLORATION_CONSTANT = 0.5;
-    private static final int WHITE = 0;
-    private static final int BLACK = 1;
+    private static final double EXPLORATION_CONSTANT = 5000;
 
     private boolean m_silent;
     private long    m_depthLimit;
@@ -40,43 +39,50 @@ public class AgentMCTS implements Agent {
         m_nodes = 0;
         m_simulations = 0;
 
+        // TODO: Deterministic mode!
+        random.setSeed(3);
+
         Move move = UCTSearch(state);
-        System.out.println(move.toStr());
+        System.out.println("MCTS makes: " + move.toStr());
+        System.out.println("No of simulations: " + m_simulations);
         return move;
     }
 
     private Move UCTSearch(State state) {
         MCTSNode v0 = new MCTSNode();
         String stateStr = state.toString();
-        // TODO: Fix this stupidity.
+        // TODO: Make this better?
         while (!reachedALimit()) {
-            MCTSNode v1 = treePolicy(v0, state);
-            int delta = defaultPolicy(v1, state);
-            backup(v1, delta);
+            // TODO: Move neðst?
             state.setup(stateStr);
+            MCTSNode v1 = treePolicy(v0, state);
+            int delta = defaultPolicy(state);
+            backup(v1, delta);
+
         }
         state.setup(stateStr);
+
+        for (int i = 0; i < v0.getChildCount(); i++) {
+            System.out.println(v0.getChild(i).move.toStr() + ": " + v0.getChild(i).value + " / " + v0.getChild(i).visits + " = " + (v0.getChild(i).value / v0.getChild(i).visits));
+        }
 
         System.out.println(bestChild(v0, 0).value);
         return bestChild(v0, 0).move;
     }
 
     private MCTSNode treePolicy(MCTSNode node, State state) {
+
         while (!state.isTerminal()) {
-            // Generates moves if it hasn't been done.
-            if (node.untried == 0) {
+            if (node.noOfChildrenExplored == 0) {
                 assert node.getChildCount() == 0;
                 ArrayList<Move> moves = state.getActions(null);
                 for (Move m : moves) {
                     MCTSNode newNode = new MCTSNode(m);
-                    assert !newNode.tried;
-                    assert newNode.untried == 0;
                     node.addChild(newNode);
                 }
             }
-
-            // Checks whether the node IS FULLY EXPANDED.
-            if (node.untried < node.getChildCount()) {
+            // Checks whether the node IS ___FULLY___ EXPANDED.
+            if (node.noOfChildrenExplored < node.getChildCount()) {
                 MCTSNode out = expand(node);
                 state.make(out.move);
                 return out;
@@ -85,6 +91,8 @@ public class AgentMCTS implements Agent {
                 state.make(node.move);
             }
         }
+
+
         return node;
     }
 
@@ -94,8 +102,8 @@ public class AgentMCTS implements Agent {
         for (MCTSNode child : parent.getChildren()) {
             assert child.visits != 0;
 
-            double value = child.value / child.visits; // TODO: child.visits.
-            value += c * Math.sqrt((2 * Math.log(parent.visits)) / child.visits);
+            double value = child.value / child.visits;
+            value += c * Math.sqrt(Math.log(parent.visits) / child.visits);
 
             if (value > bestValue) {
                 bestNode = child;
@@ -123,7 +131,7 @@ public class AgentMCTS implements Agent {
         MCTSNode next = null;
         for (int i = 0; i < node.getChildCount(); i++) {
             MCTSNode testNode = node.getChild(i);
-            if (!testNode.tried) {
+            if (!testNode.explored) {
                 next = testNode;
                 break;
             }
@@ -131,16 +139,17 @@ public class AgentMCTS implements Agent {
 
         // This particular node has been tried out:
         assert next != null;
-        next.tried = true;
+        next.explored = true;
 
-        // ... and a single more node has been tried out in the context of the parent.
-        node.untried += 1;
+        // ... and a single more node has been explored in the context of the parent.
+        node.noOfChildrenExplored += 1;
 
-        //int randInt = random.nextInt(moves.size());
         return next;
     }
 
-    private int defaultPolicy(MCTSNode node, State state) {
+    private int defaultPolicy(State state) {
+        int initialSideToMove = oppColor(state.getPlayerToMove());
+
         while (!state.isTerminal()) {
             ArrayList<Move> moves = state.getActions(null);
 
@@ -152,21 +161,32 @@ public class AgentMCTS implements Agent {
         // Increase the number of simulations
         m_simulations++;
 
-        return state.getEvaluation();
+        // WHITE NODE - WHITE LOSES.
+        // BLACK NODE - BLACK LOSES.
+        if (initialSideToMove == state.getPlayerToMove()) {
+            // Side to move wins.
+            return State.LOSS_VALUE;
+        } else {
+            // Side to move loses.
+            return State.WIN_VALUE;
+        }
+    }
+
+    private static int oppColor(int color) {
+        return color ^ 1;
     }
 
     // TODO: General utility functions.
 
-    private boolean reachedALimit()
-    {
+    private boolean reachedALimit() {
         if (m_depthLimit > 0 && m_simulations >= m_depthLimit) {
             return true;
         }
-        if ( (m_nodeLimit > 0) && (m_nodes >= m_nodeLimit) ) {
+        if (m_nodeLimit > 0 && m_nodes >= m_nodeLimit) {
             return true;
         }
-        if ( (m_timeLimit > 0) && ((m_nodes % 1000) == 0) ) {
-            if ( (java.lang.System.currentTimeMillis() - m_msec) >= m_timeLimit ) {
+        if (m_timeLimit > 0 && (m_nodes % 1000) == 0) {
+            if ((System.currentTimeMillis() - m_msec) >= m_timeLimit ) {
                 return true;
             }
         }
@@ -185,12 +205,8 @@ class MCTSNode {
     public Move move;
     public long value;
     public int visits;
-
-    // Has this been tried?
-    public boolean tried;
-
-    // Number of untried actions.
-    public int untried;
+    public boolean explored;
+    public int noOfChildrenExplored;
 
     public ArrayList<MCTSNode> children;
     public MCTSNode parent;
@@ -201,8 +217,7 @@ class MCTSNode {
         this.children = new ArrayList<MCTSNode>();
         this.visits = 0;
         this.value = 0;
-        this.untried = 0;
-        this.tried = false;
+        this.noOfChildrenExplored = 0;
     }
 
     public MCTSNode(Move move) {
