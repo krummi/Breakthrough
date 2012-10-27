@@ -62,7 +62,6 @@ public class AgentAlphaBetaPlain implements Agent
             maxDepth = MAX_SEARCH_DEPTH;
         }
 
-        System.out.println("To move: AgentAlphaBeta");
         for (int depth = 1; depth <= maxDepth && !m_abort; depth++) {
              int value = alphaBeta(0, depth, -INFINITY_VALUE, INFINITY_VALUE, state, bestMove);
             ArrayList<Move> pv = m_pv.getPV();

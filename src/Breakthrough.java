@@ -272,9 +272,10 @@ public class Breakthrough {
             Agent agent = agents[ toMove ];
             Move move = agent.playMove( state );
             state.make( move );
-            System.out.print( "bestmove " );
-            System.out.println( move.toStr() );
-            state.display();
+
+            //System.out.print( "bestmove " );
+            //System.out.println( move.toStr() );
+            // state.display();
             toMove = ( toMove==0 ? 1 : 0 );
         }
         int lastMove = (toMove == 0) ? 1 : 0;

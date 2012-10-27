@@ -56,7 +56,7 @@ public class AgentMCTS implements Agent {
         // random.setSeed(3);
 
         Move move = UCTSearch(state);
-        System.out.println("No of simulations: " + m_simulations);
+        if (!m_silent) System.out.println("No of simulations: " + m_simulations);
         return move;
     }
 
@@ -75,7 +75,7 @@ public class AgentMCTS implements Agent {
         state.setup(stateStr);
 
         for (int i = 0; i < v0.getChildCount(); i++) {
-            System.out.println(v0.getChild(i).move.toStr() + ": " + v0.getChild(i).value + " / " + v0.getChild(i).visits + " = " + (v0.getChild(i).value / v0.getChild(i).visits));
+            if (!m_silent) System.out.println(v0.getChild(i).move.toStr() + ": " + v0.getChild(i).value + " / " + v0.getChild(i).visits + " = " + (v0.getChild(i).value / v0.getChild(i).visits));
         }
 
         if (rootMoveSelector == RootMoveSelector.MostVisits) {
