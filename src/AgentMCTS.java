@@ -88,6 +88,7 @@ public class AgentMCTS implements Agent {
                 }
             }
             assert bestMove != null;
+            return bestMove;
         }
         // else rms = HighestAverage:
         return bestChild(v0, 0).move;
