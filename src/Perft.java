@@ -41,7 +41,7 @@ public class Perft {
         */
 
         long before = System.currentTimeMillis();
-        //1State state = new BreakthroughState(8, 8);
+        //State state = new BreakthroughState(8, 8);
         State state = new DiscoveryState();
         state.setup(
                 "b......b" +

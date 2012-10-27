@@ -6,7 +6,7 @@ import java.util.Random;
  * Agent using alpha-beta-search to think ahead.
  *
  */
-public class AgentAlphaBeta implements Agent
+public class AgentAlphaBetaPlain implements Agent
 {
     private static final int INFINITY_VALUE = 10001;
     private static final int MAX_SEARCH_DEPTH = 100;
@@ -22,7 +22,7 @@ public class AgentAlphaBeta implements Agent
     private long m_msec;
     private boolean m_abort;
 
-    AgentAlphaBeta( )
+    AgentAlphaBetaPlain()
     {
         m_silent = true;
         m_rng = new Random();
@@ -122,7 +122,7 @@ public class AgentAlphaBeta implements Agent
             return true;
         }
         if ( (m_timeLimit > 0) && ((m_nodes % 1000) == 0) ) {
-            if ( (java.lang.System.currentTimeMillis() - m_msec) >= m_timeLimit ) {
+            if ( (System.currentTimeMillis() - m_msec) >= m_timeLimit ) {
                 return true;
             }
         }
@@ -131,7 +131,7 @@ public class AgentAlphaBeta implements Agent
 
     @Override
     public String getName() {
-        return "AlphaBeta";
+        return "AlphaBetaPlain";
     }
 
 }

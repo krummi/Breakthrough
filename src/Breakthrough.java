@@ -19,14 +19,14 @@ public class Breakthrough {
     {
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
-        State            state             = new BreakthroughState(8, 8);
+        State            state             = new DiscoveryState();
         Agent            agents[]          = {
                 new AgentAlphaBeta(),
-                new AgentAlphaBeta()
+                new AgentMCTS()
         };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
         long             maxSearchLimit    = 0;        // 0 = limit disabled.
-        long             maxSearchTimeMsec = 2000;     // 0 = limit disabled.
+        long             maxSearchTimeMsec = 1000;     // 0 = limit disabled.
         long             maxSearchNodes    = 0;
         boolean          silenceAgent      = false;
         boolean          silenceDisplay    = false;
@@ -268,7 +268,6 @@ public class Breakthrough {
                 ">>>>>>>>>>> %s (white) vs. %s <<<<<<<<<<<",
                 agents[toMove].getName(), agents[toMove ^ 1].getName()));
         state.reset();
-        // state = new DiscoveryState();
         while ( !state.isTerminal() ) {
             Agent agent = agents[ toMove ];
             Move move = agent.playMove( state );

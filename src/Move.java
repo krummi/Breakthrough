@@ -26,15 +26,15 @@ public class Move
 
     public String toStr()
     {
-        /*
-        String str = "";
-        str += s_columns.charAt(from_col);
-        str += s_rows.charAt(from_row);
-        str += (capture ? "x" : "-" );
-        str += s_columns.charAt(to_col);
-        str += s_rows.charAt(to_row);
-        return str;
-        */
+        if (from_row != -1) {
+            String str = "";
+            str += s_columns.charAt(from_col);
+            str += s_rows.charAt(from_row);
+            str += (capture ? "x" : "-" );
+            str += s_columns.charAt(to_col);
+            str += s_rows.charAt(to_row);
+            return str;
+        }
         return toString();
     }
 

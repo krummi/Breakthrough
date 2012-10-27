@@ -38,7 +38,7 @@ public class DiscoveryState implements State {
         public void add(int color, int square) {
 
             // Updates the indices table:
-            indicis[square] = counter[color];
+            indices[square] = counter[color];
 
             // Updates the piece-list:
             squares[color][counter[color]] = square;
@@ -50,12 +50,12 @@ public class DiscoveryState implements State {
             counter[color]--;
 
             // Nullify the indices table at index:
-            indicis[squares[color][index]] = NO_INDEX;
+            indices[squares[color][index]] = NO_INDEX;
 
             // Gets the last piece-entry in this piece list and puts it at index.
             int square = squares[color][counter[color]];
             squares[color][index] = square;
-            indicis[square] = index;
+            indices[square] = index;
         }
 
         public int get(int color, int index) {
@@ -131,12 +131,15 @@ public class DiscoveryState implements State {
     public static final int N = +15; public static final int S = -15;
     public static final int E =  +1; public static final int W =  -1;
 
+    // Pieces
+    public static final int PIECE_VALUE = 100;
+
     ///////////////////////////////////////////////////////////////////////////
     // Member variables
     ///////////////////////////////////////////////////////////////////////////
 
     public int[] squares;           // 15x8 board representation
-    public int[] indicis;           // Indexes to the piece-lists
+    public int[] indices;           // Indexes to the piece-lists
     public int sideToMove;          // Who's turn is it?
     public long key;                // The hash of this board state
     public PieceList pieces;        // Keeps track of the pieces.
@@ -154,7 +157,7 @@ public class DiscoveryState implements State {
 
         // Initializes the squares.
         squares = new int[NO_OF_SQUARES];
-        indicis = new int[NO_OF_SQUARES];
+        indices = new int[NO_OF_SQUARES];
 
         // Puts a border around the board and fills the actual board with "empty squares":
         for (int a = 0; a < NO_OF_SQUARES; a++) {
@@ -192,12 +195,12 @@ public class DiscoveryState implements State {
                     continue;
                 }
                 Move firstMoveBackup = null;
-                Move move = new Move(from, 0, to, 0, isCapture);
+                Move move = new Move(from, -1, to, -1, isCapture);
 
                 // Orders the moves in PV-move, captures and non-captures.
                 if (first != null && move.equals(first)) {
                     assert firstMoveBackup != null;
-                    firstMoveBackup = new Move(from, 0, to, 0, isCapture);
+                    firstMoveBackup = new Move(from, -1, to, -1, isCapture);
                 } else {
                     if (isCapture) {
                         moves.add(0, move);
@@ -340,6 +343,29 @@ public class DiscoveryState implements State {
         return sb.toString();
     }
 
+    /*
+    @Override
+    public int getEvaluation() {
+        int value = 0;
+        if (isTerminal()) {
+            if (result == Result.Win) {
+                value = State.WIN_VALUE;
+            } else if (result == Result.Loss) {
+                value = State.LOSS_VALUE;
+            } else {
+                assert false : "Should not happen.";
+                value = 0;
+            }
+        } else {
+            value = pieces.counter[WHITE] - pieces.counter[BLACK];
+            if (sideToMove == BLACK) {
+                value = -value;
+            }
+        }
+        return value;
+    }
+    */
+
     @Override
     public int getEvaluation() {
         int value = 0;
@@ -431,7 +457,7 @@ public class DiscoveryState implements State {
         // TODO: Update material.
 
         // Updates the piece-list.
-        pieces.remove(color, indicis[square]);
+        pieces.remove(color, indices[square]);
 
         // ...and "emptify" the square.
         squares[square] = Square.EMPTY;
@@ -449,7 +475,7 @@ public class DiscoveryState implements State {
         // Initializes the squares.
         for (int a = 0; a < NO_OF_SQUARES; a++) {
             squares[a] = Square.BORDER;
-            indicis[a] = 0;
+            indices[a] = 0;
         }
         for (int a = 0; a < SQUARES_64.length; a++) {
             squares[SQUARES_64[a]] = Square.EMPTY;
