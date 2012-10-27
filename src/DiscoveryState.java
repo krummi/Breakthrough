@@ -1,5 +1,3 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -389,7 +387,7 @@ public class DiscoveryState implements State {
 
     @Override
     public Move isLegalMove(String strMove) {
-        throw new NotImplementedException();
+        return null;
     }
 
     @Override
