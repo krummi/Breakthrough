@@ -26,6 +26,7 @@ public class Move
 
     public String toStr()
     {
+        /*
         String str = "";
         str += s_columns.charAt(from_col);
         str += s_rows.charAt(from_row);
@@ -33,6 +34,8 @@ public class Move
         str += s_columns.charAt(to_col);
         str += s_rows.charAt(to_row);
         return str;
+        */
+        return toString();
     }
 
     boolean equals ( Move other ) {
@@ -44,7 +47,9 @@ public class Move
     }
 
     public String toString() {
-        return toStr();
+        String s = Square.getSquareName(from_col)
+            + (capture ? "x" : "-") + Square.getSquareName(to_col);
+        return s.toLowerCase();
     }
 
 }

@@ -40,18 +40,29 @@ public class Perft {
         }
         */
 
-        State state = new BreakthroughState(8, 8);
-        state.setup(setup + " 1");
+        long before = System.currentTimeMillis();
+        //1State state = new BreakthroughState(8, 8);
+        State state = new DiscoveryState();
+        state.setup(
+                "b......b" +
+                        "bb.b...b" +
+                        ".bb.bb.b" +
+                        "........" +
+                        "www.w..." +
+                        "w..w.www" +
+                        ".ww..w.." +
+                        "...ww..w 0");
+
         state.display();
 
-        Agent a = new AgentMCTS();
+        Agent a = new AgentAlphaBeta();
         a.setSilence(false);
-        a.setThinklimit(100000, 0, 0);
+        a.setThinklimit(9, 0, 0);
         Move m = a.playMove(state);
         System.out.println("Move: " + m.toStr());
-
-        state.make(m);
         state.display();
+        System.out.println();
+        System.out.println("Delta: " + (System.currentTimeMillis() - before));
     }
 
 }

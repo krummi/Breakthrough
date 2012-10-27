@@ -56,7 +56,6 @@ public class AgentMCTS implements Agent {
         // random.setSeed(3);
 
         Move move = UCTSearch(state);
-        System.out.println("MCTS makes: " + move.toStr());
         System.out.println("No of simulations: " + m_simulations);
         return move;
     }
