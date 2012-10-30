@@ -15,4 +15,5 @@ public interface Agent
     public Move playMove( State state );
 
     public String getName();
+
 }

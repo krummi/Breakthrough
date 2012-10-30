@@ -129,8 +129,10 @@ public class DiscoveryState implements State {
     public static final int N = +15; public static final int S = -15;
     public static final int E =  +1; public static final int W =  -1;
 
-    // Pieces
-    public static final int PIECE_VALUE = 100;
+    // Node types
+    public static final int SCORE_ALL = 0;
+    public static final int SCORE_CUT = 1;
+    public static final int SCORE_EXACT = 2;
 
     ///////////////////////////////////////////////////////////////////////////
     // Member variables
@@ -171,7 +173,9 @@ public class DiscoveryState implements State {
         // Setup the initial FEN.
         setup(fen);
 
-        // TODO: Create the Zobrist key.
+        // Generate a Zobrist key for the board.
+        key = Zobrist.getZobristKey(this);
+        System.out.println(key);
     }
 
     @Override
@@ -197,7 +201,7 @@ public class DiscoveryState implements State {
 
                 // Orders the moves in PV-move, captures and non-captures.
                 if (first != null && move.equals(first)) {
-                    assert firstMoveBackup != null;
+                    assert firstMoveBackup == null;
                     firstMoveBackup = new Move(from, -1, to, -1, isCapture);
                 } else {
                     if (isCapture) {
@@ -251,19 +255,22 @@ public class DiscoveryState implements State {
         // Toggle the side to move
         sideToMove = oppColor(sideToMove);
 
-        // TODO: key ^= Zobrist.SIDE_TO_MOVE;
+        // Update the hash-key.
+        key ^= Zobrist.SIDE_TO_MOVE;
     }
 
     @Override
     public void retract(Move move) {
 
         // Retrieve the from and to square.
-        int from = move.from_col; // TODO: update.
-        int to   = move.to_col; // TODO: fix.
+        int from = move.from_col;
+        int to   = move.to_col;
 
         // Toggle the side to move:
         sideToMove = oppColor(sideToMove);
-        // TODO: key ^= Zobrist.SIDE_TO_MOVE;
+
+        // Update the hash-key.
+        key ^= Zobrist.SIDE_TO_MOVE;
 
         // Puts the piece back to its initial location (from) and clears the "to"-square:
         clearSquare(to, true);
@@ -336,33 +343,11 @@ public class DiscoveryState implements State {
                 sb.append(c);
             }
         }
+
         sb.append(' ');
         sb.append(sideToMove == WHITE ? '0' : '1');
         return sb.toString();
     }
-
-    /*
-    @Override
-    public int getEvaluation() {
-        int value = 0;
-        if (isTerminal()) {
-            if (result == Result.Win) {
-                value = State.WIN_VALUE;
-            } else if (result == Result.Loss) {
-                value = State.LOSS_VALUE;
-            } else {
-                assert false : "Should not happen.";
-                value = 0;
-            }
-        } else {
-            value = pieces.counter[WHITE] - pieces.counter[BLACK];
-            if (sideToMove == BLACK) {
-                value = -value;
-            }
-        }
-        return value;
-    }
-    */
 
     @Override
     public int getEvaluation() {
@@ -429,10 +414,8 @@ public class DiscoveryState implements State {
 
         if (rehash) {
             // Adds this piece on this square to the hash-key:
-            // TODO: key ^= Zobrist.PIECES[piece - 1][color][square];
+            key ^= Zobrist.PIECES[color][square];
         }
-
-        // TODO: Update material.
 
         // Updates the piece list.
         pieces.add(color, square);
@@ -449,24 +432,14 @@ public class DiscoveryState implements State {
         // Retracts the hashing.
         if (rehash) {
             // Undoes this piece on this square from the hash-key:
-        // TODO:    key ^= Zobrist.PIECES[piece - 1][color][square];
+            key ^= Zobrist.PIECES[color][square];
         }
-
-        // TODO: Update material.
 
         // Updates the piece-list.
         pieces.remove(color, indices[square]);
 
         // ...and "emptify" the square.
         squares[square] = Square.EMPTY;
-    }
-
-    private void addMove(ArrayList<Move> moves, Move move, Move placeFirst) {
-        if (placeFirst != null && placeFirst.equals(move)) {
-            moves.add(0, move);
-        } else {
-            moves.add(move);
-        }
     }
 
     private void empty() {

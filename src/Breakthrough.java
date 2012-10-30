@@ -19,10 +19,10 @@ public class Breakthrough {
     {
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
-        State            state             = new DiscoveryState();
+        State            state             = new BitboardState();
         Agent            agents[]          = {
-                new AgentAlphaBeta(),
-                new AgentMCTS()
+                new AgentMCTS(),
+                new AgentAlphaBetaPlain()
         };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
         long             maxSearchLimit    = 0;        // 0 = limit disabled.
@@ -225,13 +225,16 @@ public class Breakthrough {
                         // Autoplay a <n> game match.
                         if ( st.hasMoreTokens() ) {
                             try {
+                                System.out.println(String.format(
+                                        "> %s (white) vs. %s (black)",
+                                        agents[0].getName(), agents[1].getName()));
                                 int maxGamePairs = Integer.valueOf(st.nextToken());
                                 int[] outcome = {0, 0};
                                 for ( int n=0 ; n < maxGamePairs; ++n ) {
-                                   playAMatch(agents, 0, state, outcome);
-                                   playAMatch(agents, 1, state, outcome);
+                                   playAMatch(agents, 0, state, outcome, silenceAgent);
+                                   playAMatch(agents, 1, state, outcome, silenceAgent);
                                 }
-                                System.out.println( "outcome: " + outcome[0] + " - " + outcome[1] );
+                                System.out.println( "total: " + outcome[0] + " - " + outcome[1] );
                             } catch (NumberFormatException e ) {
                                 System.out.println( " => Input error, number of games not an integer.");
                             }
@@ -261,21 +264,16 @@ public class Breakthrough {
     }
 
 
-    private static void playAMatch( Agent agents[], int goesFirst, State state, int [] outcome )
+    private static void playAMatch( Agent agents[], int goesFirst, State state, int [] outcome, boolean silence)
     {
         int toMove = goesFirst;
-        System.out.println(String.format(
-                ">>>>>>>>>>> %s (white) vs. %s <<<<<<<<<<<",
-                agents[toMove].getName(), agents[toMove ^ 1].getName()));
         state.reset();
         while ( !state.isTerminal() ) {
+            if (!silence) state.display();
+            if (!silence) System.out.println("To go: " + agents[toMove].getName());
             Agent agent = agents[ toMove ];
             Move move = agent.playMove( state );
             state.make( move );
-
-            //System.out.print( "bestmove " );
-            //System.out.println( move.toStr() );
-            // state.display();
             toMove = ( toMove==0 ? 1 : 0 );
         }
         int lastMove = (toMove == 0) ? 1 : 0;
@@ -285,5 +283,6 @@ public class Breakthrough {
         else if ( state.getResult() == State.Result.Loss ) {
             outcome[ lastMove ] += 1;
         }
+        System.out.println( "outcome: " + outcome[0] + " - " + outcome[1] );
     }
 }

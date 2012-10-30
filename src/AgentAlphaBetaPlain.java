@@ -30,7 +30,6 @@ public class AgentAlphaBetaPlain implements Agent
         m_depthLimit = m_nodeLimit = m_timeLimit = 0;
     }
 
-
     public void setSilence( boolean on )
     {
         m_silent = on;

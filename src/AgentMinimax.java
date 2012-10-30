@@ -62,7 +62,6 @@ public class AgentMinimax implements Agent
             maxDepth = MAX_SEARCH_DEPTH;
         }
 
-        System.out.println("To move: AgentMinimax");
         for ( int depth = 1 ; depth <= maxDepth && !m_abort; ++depth ) {
             // Make sure the best move from previous iteration is search first in this iteration,
             // this is necessary to ensure that in case of a timeout, the best move currently found

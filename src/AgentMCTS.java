@@ -70,7 +70,6 @@ public class AgentMCTS implements Agent {
             MCTSNode v1 = treePolicy(v0, state);
             int delta = defaultPolicy(state);
             backup(v1, delta);
-
         }
         state.setup(stateStr);
 
@@ -175,7 +174,13 @@ public class AgentMCTS implements Agent {
         int initialSideToMove = oppColor(state.getPlayerToMove());
 
         while (!state.isTerminal()) {
+            // Commenting this out generates beautiful ASCII waterfalls:
+            // System.out.println(state.toString());
             ArrayList<Move> moves = state.getActions(null);
+
+            if (moves.size() == 0) {
+                state.display();
+            }
 
             // Choose a move at random.
             Move move = moves.get(random.nextInt(moves.size()));

@@ -328,7 +328,6 @@ public class BreakthroughState implements State
        return m_result;
     }
 
-
     public Move isLegalMove( String strMove )
     {
         ArrayList<Move> moves = getActions( null );

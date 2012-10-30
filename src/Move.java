@@ -26,7 +26,7 @@ public class Move
 
     public String toStr()
     {
-        if (from_row != -1) {
+        if (from_row != -1 && from_row != -2) {
             String str = "";
             str += s_columns.charAt(from_col);
             str += s_rows.charAt(from_row);
@@ -34,6 +34,13 @@ public class Move
             str += s_columns.charAt(to_col);
             str += s_rows.charAt(to_row);
             return str;
+        }
+        if (from_row == -2) {
+            String s = "" + BitboardState.SQUARES[from_col] +
+                    (capture ? "x" : "-") + BitboardState.SQUARES[to_col];
+            //+ " (" +
+            //        from_col + "-" + to_col + ")";;
+            return s.toLowerCase();
         }
         return toString();
     }
