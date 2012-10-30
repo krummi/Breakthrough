@@ -9,7 +9,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
@@ -21,7 +20,7 @@ public class Breakthrough {
 
         State            state             = new BitboardState();
         Agent            agents[]          = {
-                new AgentMCTS(),
+                new AgentAlphaBeta(),
                 new AgentAlphaBetaPlain()
         };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
@@ -31,7 +30,7 @@ public class Breakthrough {
         boolean          silenceAgent      = false;
         boolean          silenceDisplay    = false;
 
-        agents[0].setSilence( silenceAgent );
+        agents[0].setSilence(silenceAgent);
         agents[1].setSilence(silenceAgent);
         agents[0].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
         agents[1].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );

@@ -18,30 +18,27 @@ public class Evaluator {
                 "wwwwwwww 1";
         */
 
-        String setup = "........w.bb......bb....wbb...bbw.b..wwb.w...bw................w 0";
+        String setup = "b........wb.bb..bb.b.bb.........b....w...w.....ww..w....w.ww..ww 1";
 
         BitboardState state = new BitboardState();
         state.setup(setup);
         state.display();
-        long x = (state.WP << 8) & ~(state.BP | state.WP);
+        //long x = (state.WP << 8) & ~(state.BP | state.WP);
         //state.printBitboard(x);
-        state.printBitboard(x);
-        while (x != 0) {
-            long h = Long.highestOneBit(x);
-            x &= ~h;
-            int pos = 63 - Long.numberOfLeadingZeros(h);
-            System.out.println("pos: " + pos);
-        }
+        //state.printBitboard(x);
+        //while (x != 0) {
+        //    long h = Long.highestOneBit(x);
+        //    x &= ~h;
+        //    int pos = 63 - Long.numberOfLeadingZeros(h);
+        //    System.out.println("pos: " + pos);
+        //}
         ArrayList<Move> moves = state.getActions(null);
         System.out.println(state.isTerminal());
         for (Move m : moves) {
-            if (m.toStr().equals("a7-a8")) {
-                System.out.println("hehehehe");
-            }
             state.make(m);
-            if (state.isTerminal()) {
+            //if (state.isTerminal()) {
                 System.out.println(m.toStr());
-            }
+            //}
             state.retract(m);
         }
         //state.isplay();
@@ -118,7 +115,7 @@ public class Evaluator {
                 System.out.println("NO BITBOARD MOVE FOUND FOR: " + m.toStr());
                 //state2.printBitboard(state2.BP);
                 //state2.printBitboard(state2.WP);
-                long a = ((state2.WP & ~BitboardState.FILE_H) << 9) & state2.BP;
+                //long a = ((state2.WP & ~BitboardState.FILE_A) << 9) & state2.BP;
                 /*
                 while (a != 0) {
                     long h = Long.highestOneBit(a);

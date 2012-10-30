@@ -118,7 +118,7 @@ public class BitboardState implements State {
         while (bitboard != 0) {
             long h = Long.highestOneBit(bitboard);
             bitboard &= ~h;
-            int pos = 63 - Long.numberOfLeadingZeros(h);
+            int pos = Long.numberOfTrailingZeros(h);
             Move p = new Move(pos + delta, -2, pos, -2, areCaptures);
             if (pv != null && pv.equals(p)) {
                 moves.add(0, p);

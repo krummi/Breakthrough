@@ -84,20 +84,20 @@ public class AgentAlphaBeta implements Agent
             if ( !m_silent ) { System.out.println(); }
         }
 
-        System.out.println("trans hits: " + transHits);
-
         return bestMove;
     }
 
     private int alphaBeta(int ply, int depth, int alpha, int beta, State s, Move firstMoveToLookAt) {
         assert alpha >= -INFINITY_VALUE && alpha < beta && beta <= INFINITY_VALUE;
 
-        DiscoveryState state = (DiscoveryState) s;
+        //DiscoveryState state = (DiscoveryState) s;
+        BitboardState state = (BitboardState) s;
         m_nodes++;
         m_pv.set(ply);
 
         // Transposition table lookup
         // TODO: Okay, talk to Yngvi.
+        /*
         TranspositionTable.HashEntry entry = transTable.get(state.key);
         if (entry != null) {
             if (entry.depth >= depth) {
@@ -111,11 +111,12 @@ public class AgentAlphaBeta implements Agent
                 }
             }
         }
+        */
 
         // Horizon?
         if (depth <= 0 || state.isTerminal()) {
             int eval = state.getEvaluation();
-            transTable.putLeaf(state.key, eval, alpha, beta);
+            //transTable.putLeaf(state.key, eval, alpha, beta);
             m_abort = reachedALimit();
             return eval;
         }
@@ -145,6 +146,7 @@ public class AgentAlphaBeta implements Agent
         }
 
         // Update the transposition table.
+        /*
         if (bestValue <= alpha) {
             transTable.put(state.key, DiscoveryState.SCORE_ALL, depth, eval, move);
         } else if (bestValue >= beta) {
@@ -152,6 +154,7 @@ public class AgentAlphaBeta implements Agent
         } else {
             transTable.put(state.key, DiscoveryState.SCORE_EXACT, depth, eval, move);
         }
+        */
 
         return bestValue;
     }
