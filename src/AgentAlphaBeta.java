@@ -68,7 +68,7 @@ public class AgentAlphaBeta implements Agent
         }
 
         for (int depth = 1; depth <= maxDepth && !m_abort; depth++) {
-             int value = alphaBeta(0, depth, -INFINITY_VALUE, INFINITY_VALUE, state, bestMove);
+            int value = alphaBeta(0, depth, -INFINITY_VALUE, INFINITY_VALUE, state, bestMove, true);
             ArrayList<Move> pv = m_pv.getPV();
 
             // TODO: MOVE TO SOME FUNCTION.
@@ -87,7 +87,8 @@ public class AgentAlphaBeta implements Agent
         return bestMove;
     }
 
-    private int alphaBeta(int ply, int depth, int alpha, int beta, State s, Move firstMoveToLookAt) {
+    private int alphaBeta(int ply, int depth, int alpha, int beta,
+                          State s, Move firstMoveToLookAt, boolean nmAllowed) {
         assert alpha >= -INFINITY_VALUE && alpha < beta && beta <= INFINITY_VALUE;
 
         //DiscoveryState state = (DiscoveryState) s;
@@ -121,15 +122,36 @@ public class AgentAlphaBeta implements Agent
             return eval;
         }
 
-        Move move = null;
         int eval = 0;
+
+        // Do null move pruning?
+        if (depth >= 2
+                && beta < INFINITY_VALUE
+                && nmAllowed
+                && Long.bitCount(state.BP | state.WP) > 10) {
+            // Adapts R by depth.  TODO: ?
+            int r = 1;
+            if      (depth >= 4) r = 2;
+            else if (depth >= 7) r = 3;
+
+            state.makeNullMove();
+            eval = -alphaBeta(ply + 1, depth - r, -beta, -alpha, state, null, false);
+            state.retractNullMove();
+
+            if (eval >= beta) {
+                return eval;
+            }
+        }
+
+
+        Move move = null;
         int bestValue = Integer.MIN_VALUE;
         ArrayList<Move> moves = state.getActions(firstMoveToLookAt);
         for (int i = 0; i < moves.size(); i++) {
             move = moves.get(i);
 
             state.make(move);
-            eval = -alphaBeta(ply + 1, depth - 1, -beta, -alpha, state, null);
+            eval = -alphaBeta(ply + 1, depth - 1, -beta, -alpha, state, null, true);
             state.retract(move);
             if (m_abort) { break; }
 

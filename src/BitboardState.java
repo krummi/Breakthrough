@@ -1,6 +1,4 @@
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -340,6 +338,14 @@ public class BitboardState implements State {
 
     public static int oppColor(int color) {
         return color ^ 1;
+    }
+
+    public void makeNullMove() {
+        sideToMove = oppColor(sideToMove);
+    }
+
+    public void retractNullMove() {
+        sideToMove = oppColor(sideToMove);
     }
 
 }
