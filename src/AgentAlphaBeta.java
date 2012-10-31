@@ -55,7 +55,7 @@ public class AgentAlphaBeta implements Agent
         Move bestMove = null;
 
         // Clears the transposition table.
-        transTable.clear();
+        // transTable.clear();
 
         // Non-determinism:
         ArrayList<Move> moves = state.getActions(null);
@@ -91,13 +91,12 @@ public class AgentAlphaBeta implements Agent
                           State s, Move firstMoveToLookAt, boolean nmAllowed) {
         assert alpha >= -INFINITY_VALUE && alpha < beta && beta <= INFINITY_VALUE;
 
-        //DiscoveryState state = (DiscoveryState) s;
         BitboardState state = (BitboardState) s;
         m_nodes++;
+        int eval;
         m_pv.set(ply);
 
         // Transposition table lookup
-        // TODO: Okay, talk to Yngvi.
         /*
         TranspositionTable.HashEntry entry = transTable.get(state.key);
         if (entry != null) {
@@ -116,26 +115,20 @@ public class AgentAlphaBeta implements Agent
 
         // Horizon?
         if (depth <= 0 || state.isTerminal()) {
-            int eval = state.getEvaluation();
+            eval = state.getEvaluation();
             //transTable.putLeaf(state.key, eval, alpha, beta);
             m_abort = reachedALimit();
             return eval;
         }
 
-        int eval = 0;
-
         // Do null move pruning?
         if (depth >= 2
                 && beta < INFINITY_VALUE
                 && nmAllowed
-                && Long.bitCount(state.BP | state.WP) > 10) {
-            // Adapts R by depth.  TODO: ?
-            int r = 1;
-            if      (depth >= 4) r = 2;
-            else if (depth >= 7) r = 3;
+                && Long.bitCount(state.BP | state.WP) > 14) {
 
             state.makeNullMove();
-            eval = -alphaBeta(ply + 1, depth - r, -beta, -alpha, state, null, false);
+            eval = -alphaBeta(ply + 1, depth - 3, -beta, -alpha, state, null, false);
             state.retractNullMove();
 
             if (eval >= beta) {
@@ -143,7 +136,7 @@ public class AgentAlphaBeta implements Agent
             }
         }
 
-
+        // Normal search
         Move move = null;
         int bestValue = Integer.MIN_VALUE;
         ArrayList<Move> moves = state.getActions(firstMoveToLookAt);

@@ -18,10 +18,10 @@ public class Breakthrough {
     {
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
-        State            state             = new BitboardState();
+        State            state             = new BreakthroughState(8, 8);
         Agent            agents[]          = {
-                new AgentAlphaBeta(),
-                new AgentAlphaBetaPlain()
+                new AgentAlphaBetaPlain(),
+                new AgentMinimax()
         };
         ArrayList<Move>  moveHistory       = new ArrayList<Move>();
         long             maxSearchLimit    = 0;        // 0 = limit disabled.
