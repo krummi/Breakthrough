@@ -122,9 +122,15 @@ public class AgentDiscovery implements Agent {
         }
         */
 
-        // Horizon?
-        if (depth <= 0 || state.isTerminal()) {
-            eval = state.getEvaluation();
+        // Terminal position?
+        if (state.isTerminal()) {
+            m_abort = reachedALimit();
+            return state.getEvaluation();
+        }
+
+        // Horizon? Quiescence search!
+        if (depth <= 0) {
+            eval = qsearch(ply, alpha, beta, firstMoveToLookAt);
             //transTable.putLeaf(state.key, eval, alpha, beta);
             m_abort = reachedALimit();
             return eval;
@@ -148,12 +154,9 @@ public class AgentDiscovery implements Agent {
         */
 
         // Normal search
-        int move;
         int bestValue = Integer.MIN_VALUE;
         ArrayList<Integer> moves = state.getAllMoves(firstMoveToLookAt);
-        for (int i = 0; i < moves.size(); i++) {
-            move = moves.get(i);
-
+        for (int move : moves) {
             state.make(move);
             eval = -alphaBeta(ply + 1, depth - 1, -beta, -alpha, DiscoveryMove.MOVE_NONE);
             state.retract(move);
@@ -167,7 +170,9 @@ public class AgentDiscovery implements Agent {
             // Raising alpha?
             if (bestValue > alpha) {
                 alpha = bestValue;
-                if (alpha >= beta) break; // Beta cutoff
+                if (alpha >= beta) {
+                    return beta; // Beta cutoff.
+                }
             }
         }
 
@@ -185,7 +190,42 @@ public class AgentDiscovery implements Agent {
         return bestValue;
     }
 
-    // TODO: Quiscence search.
+    /*
+     * Quiescence search.
+     */
+    private int qsearch(int ply, int alpha, int beta, int firstMoveToLookAt) {
+        m_nodes++;
+
+        if (state.isTerminal()) return state.getEvaluation();
+
+        int eval = state.getEvaluation();
+
+        if (eval >= beta) {
+            return beta;
+        }
+        if (eval > alpha) {
+            alpha = eval;
+        }
+
+        // Generate captures.
+        ArrayList<Integer> moves = state.getCaptureMoves(firstMoveToLookAt);
+        for (int m : moves) {
+            assert DiscoveryMove.isCapture(m);
+        }
+        for (int move : moves) {
+            state.make(move);
+            eval = -qsearch(ply + 1, -beta, -alpha, DiscoveryMove.MOVE_NONE);
+            state.retract(move);
+
+            if (eval >= beta) {
+                return beta; // Beta cutoff.
+            }
+            if (eval > alpha) {
+                alpha = eval;
+            }
+        }
+        return alpha;
+    }
 
     // Evaluation constants!
 

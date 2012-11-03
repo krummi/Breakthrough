@@ -20,20 +20,20 @@ public class Zobrist {
         SIDE_TO_MOVE = Math.abs(random.nextLong());
     }
 
-    public static long getZobristKey(final OldState state) {
+    public static long getZobristKey(final DiscoveryState state) {
 
         long key = 0L;
 
         // Every piece on the board:
-        for (int i = 0; i < OldState.NO_OF_SQUARES; i++) {
-            int square = state.squares[i];
-            if (square == OldState.WHITE || square == OldState.BLACK) {
-                key ^= PIECES[square][i];
-            }
+        for (int i = 0; i < 64; i++) {
+
+            //if (square == OldState.WHITE || square == OldState.BLACK) {
+            //    key ^= PIECES[square][i];
+            //}
         }
 
         // Side to move
-        if (state.sideToMove == OldState.BLACK) {
+        if (state.getPlayerToMove() == 1) { // Black to move.
             key ^= SIDE_TO_MOVE;
         }
 

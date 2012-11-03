@@ -1,3 +1,5 @@
+import com.sun.org.apache.bcel.internal.generic.RETURN;
+
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,6 +72,11 @@ public class DiscoveryState {
     private static final int WHITE = 0;
     private static final int BLACK = 1;
 
+    // Deltas
+    private static final int DELTA_N  = -8; private static final int DELTA_S  = 8;
+    private static final int DELTA_NW = -9; private static final int DELTA_SW = 7;
+    private static final int DELTA_NE = -7; private static final int DELTA_SE = 9;
+
     ///////////////////////////////////////////////////////////////////////////
     // Member variables
     ///////////////////////////////////////////////////////////////////////////
@@ -91,6 +98,26 @@ public class DiscoveryState {
         setup(fen);
     }
 
+    public ArrayList<Integer> getCaptureMoves(int first) {
+        ArrayList<Integer> moves = new ArrayList<Integer>();
+        if (sideToMove == WHITE) {
+            long WP_NW             = (WP & ~FILE_H) << 9;
+            long WP_NE             = (WP & ~FILE_A) << 7;
+            long WP_NW_CAPTURES    = WP_NW & BP;
+            long WP_NE_CAPTURES    = WP_NE & BP;
+            addMoves(moves, WP_NW_CAPTURES, DELTA_NW, true, first);
+            addMoves(moves, WP_NE_CAPTURES, DELTA_NE, true, first);
+        } else {
+            long BP_SW             = (BP & ~FILE_H) >>> 7;
+            long BP_SE             = (BP & ~FILE_A) >>> 9;
+            long BP_SW_CAPTURES    = BP_SW & WP;
+            long BP_SE_CAPTURES    = BP_SE & WP;
+            addMoves(moves, BP_SW_CAPTURES, DELTA_SW, true, first);
+            addMoves(moves, BP_SE_CAPTURES, DELTA_SE, true, first);
+        }
+        return moves;
+    }
+
     public ArrayList<Integer> getAllMoves(int first) {
         ArrayList<Integer> moves = new ArrayList<Integer>();
 
@@ -104,11 +131,11 @@ public class DiscoveryState {
             long WP_NW_CAPTURES    = WP_NW & BP;
             long WP_NE_CAPTURES    = WP_NE & BP;
 
-            addMoves(moves, WP_NW_CAPTURES, -9, true, first);
-            addMoves(moves, WP_NE_CAPTURES, -7, true, first);
-            addMoves(moves, WP_N, -8, false, first);
-            addMoves(moves, WP_NW_NONCAPTURES, -9, false, first);
-            addMoves(moves, WP_NE_NONCAPTURES, -7, false, first);
+            addMoves(moves, WP_NW_CAPTURES, DELTA_NW, true, first);
+            addMoves(moves, WP_NE_CAPTURES, DELTA_NE, true, first);
+            addMoves(moves, WP_N, DELTA_N, false, first);
+            addMoves(moves, WP_NW_NONCAPTURES, DELTA_NW, false, first);
+            addMoves(moves, WP_NE_NONCAPTURES, DELTA_NE, false, first);
         } else {
             long BP_S              = (BP >>> 8) & emptySquares;
             long BP_SW             = (BP & ~FILE_H) >>> 7;
@@ -118,11 +145,11 @@ public class DiscoveryState {
             long BP_SW_CAPTURES    = BP_SW & WP;
             long BP_SE_CAPTURES    = BP_SE & WP;
 
-            addMoves(moves, BP_SW_CAPTURES, 7, true, first);
-            addMoves(moves, BP_SE_CAPTURES, 9, true, first);
-            addMoves(moves, BP_S, 8, false, first);
-            addMoves(moves, BP_SW_NONCAPTURES, 7, false, first);
-            addMoves(moves, BP_SE_NONCAPTURES, 9, false, first);
+            addMoves(moves, BP_SW_CAPTURES, DELTA_SW, true, first);
+            addMoves(moves, BP_SE_CAPTURES, DELTA_SE, true, first);
+            addMoves(moves, BP_S, DELTA_S, false, first);
+            addMoves(moves, BP_SW_NONCAPTURES, DELTA_SW, false, first);
+            addMoves(moves, BP_SE_NONCAPTURES, DELTA_SE, false, first);
         }
 
         return moves;

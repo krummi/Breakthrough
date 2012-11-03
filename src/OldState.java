@@ -174,7 +174,7 @@ public class OldState implements State {
         setup(fen);
 
         // Generate a Zobrist key for the board.
-        key = Zobrist.getZobristKey(this);
+        // key = Zobrist.getZobristKey(this);
         System.out.println(key);
     }
 
