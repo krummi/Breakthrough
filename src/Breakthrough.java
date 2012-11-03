@@ -268,7 +268,6 @@ public class Breakthrough {
         state.reset();
         game.reset( state );
         while ( !state.isTerminal() ) {
-            System.out.println("To move: " + agents[toMove].getName());
             Agent agent = agents[ toMove ];
             Move move = agent.playMove( state, game );
             state.make( move );

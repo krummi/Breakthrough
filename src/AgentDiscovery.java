@@ -71,6 +71,7 @@ public class AgentDiscovery implements Agent {
             maxDepth = MAX_SEARCH_DEPTH;
         }
 
+        if (!m_silent) System.out.println("To move: " + getName());
         for (int depth = 1; depth <= maxDepth && !m_abort; depth++) {
             int value = alphaBeta(0, depth, -INFINITY_VALUE, INFINITY_VALUE, bestMove);
             ArrayList<Integer> pv = m_pv.getPV();
