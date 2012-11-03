@@ -28,6 +28,15 @@ public class BreakthroughState implements State
         reset();
     }
 
+    public BreakthroughState( BreakthroughState other )
+    {
+       m_row = other.m_row;
+        m_col = other.m_col;
+        m_board = new Square[m_row][m_col];
+        m_countPces = new int[2];
+        setup( other.toString() );
+    }
+
     private void empty()
     {
         for ( int row=0; row<m_row; ++row ) {
@@ -46,12 +55,14 @@ public class BreakthroughState implements State
 
         for ( int row=0; row<2; ++row ) {
             for ( int col=0; col<m_col; ++col ) {
+                //if ((col+row)%2 == 0) continue;
                 m_board[row][col] = Square.White;
                 m_countPces[0]++;
             }
         }
         for ( int row=m_row-2; row<m_row; ++row ) {
             for ( int col=0; col<m_col; ++col ) {
+                //if ((col+row)%2 == 0) continue;
                 m_board[row][col] = Square.Black;
                 m_countPces[1]++;
             }

@@ -47,7 +47,7 @@ public class AgentMCTS implements Agent {
         m_timeLimit  = maxTimeMsec;
     }
 
-    public Move playMove(State state) {
+    public Move playMove(State state, Game gameHistory) {
         m_msec = System.currentTimeMillis();
         m_nodes = 0;
         m_simulations = 0;
@@ -65,7 +65,6 @@ public class AgentMCTS implements Agent {
         String stateStr = state.toString();
         // TODO: Make this better?
         while (!reachedALimit()) {
-            // TODO: Move neðst?
             state.setup(stateStr);
             MCTSNode v1 = treePolicy(v0, state);
             int delta = defaultPolicy(state);
@@ -150,19 +149,18 @@ public class AgentMCTS implements Agent {
     private MCTSNode expand(MCTSNode node) {
         assert node.getChildCount() > 0;
 
-        // Finds TODO: the next node that which has not been tried? Is this okay?
+        // Finds the next node which has not been simulated.
         MCTSNode next = null;
         for (int i = 0; i < node.getChildCount(); i++) {
             MCTSNode testNode = node.getChild(i);
-            if (!testNode.explored) {
+            if (testNode.visits == 0) {
                 next = testNode;
                 break;
             }
         }
 
-        // This particular node has been tried out:
         assert next != null;
-        next.explored = true;
+        assert next.visits == 0;
 
         // ... and a single more node has been explored in the context of the parent.
         node.noOfChildrenExplored += 1;
@@ -205,8 +203,6 @@ public class AgentMCTS implements Agent {
         return color ^ 1;
     }
 
-    // TODO: General utility functions.
-
     private boolean reachedALimit() {
         if (m_depthLimit > 0 && m_simulations >= m_depthLimit) {
             return true;
@@ -229,17 +225,13 @@ public class AgentMCTS implements Agent {
 
 }
 
-
-
 class MCTSNode {
 
     // Members
 
-    // TODO: Move to getters/setters.
     public Move move;
     public long value;
     public int visits;
-    public boolean explored;
     public int noOfChildrenExplored;
 
     public ArrayList<MCTSNode> children;

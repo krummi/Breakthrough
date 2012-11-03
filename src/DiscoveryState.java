@@ -2,383 +2,307 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DiscoveryState implements State {
+public class DiscoveryState {
 
     ///////////////////////////////////////////////////////////////////////////
-    // Data types
+    // Types
     ///////////////////////////////////////////////////////////////////////////
-
-    public class PieceList {
-
-        // Constants
-
-        private final int NO_INDEX = -1;
-
-        // Variables
-
-        public int[] counter;
-        private int[] iteratorIndex;
-        public int[][] squares;
-
-        // Functions
-
-        private PieceList(int maximumNoOfPieces) {
-            counter = new int[]{0, 0};
-            iteratorIndex = new int[]{0, 0};
-            squares = new int[NO_OF_COLORS][maximumNoOfPieces];
-
-            for (int a = 0; a < maximumNoOfPieces; a++) {
-                squares[WHITE][a] = NO_INDEX;
-                squares[BLACK][a] = NO_INDEX;
-            }
-        }
-
-        public void add(int color, int square) {
-
-            // Updates the indices table:
-            indices[square] = counter[color];
-
-            // Updates the piece-list:
-            squares[color][counter[color]] = square;
-            counter[color]++;
-        }
-
-        public void remove(int color, int index) {
-
-            counter[color]--;
-
-            // Nullify the indices table at index:
-            indices[squares[color][index]] = NO_INDEX;
-
-            // Gets the last piece-entry in this piece list and puts it at index.
-            int square = squares[color][counter[color]];
-            squares[color][index] = square;
-            indices[square] = index;
-        }
-
-        public int get(int color, int index) {
-            return squares[color][index];
-        }
-
-        public void clear() {
-            counter[WHITE] = 0;
-            counter[BLACK] = 0;
-        }
-
-        public int getNext(int color) {
-            if (counter[color] == iteratorIndex[color]) {
-                iteratorIndex[color] = 0;
-                return Square.NONE;
-            }
-
-            return squares[color][iteratorIndex[color]++];
-        }
-    }
-
+    enum Result { Unknown, Loss, Win }
 
     ///////////////////////////////////////////////////////////////////////////
     // Constants
     ///////////////////////////////////////////////////////////////////////////
 
+    // Win/Loss values
+    public static int WIN_VALUE  =  10000;
+    public static int LOSS_VALUE = -10000;
+
     // FEN
     private static final String INITIAL_FEN =
             "bbbbbbbbbbbbbbbb................................wwwwwwwwwwwwwwww 0";
 
-    private static final Pattern FEN_PATTERN = Pattern.compile("[wb\\.]{64} ?[01]?");
+    private static final Pattern FEN_PATTERN = Pattern.compile("([wb\\.]{64}) ?([01]?)");
 
-    // Board
-    public static final int A1 = 0x22, B1 = 0x23, C1 = 0x24, D1 = 0x25, E1 = 0x26, F1 = 0x27, G1 = 0x28, H1 = 0x29;
-    public static final int A2 = 0x31, B2 = 0x32, C2 = 0x33, D2 = 0x34, E2 = 0x35, F2 = 0x36, G2 = 0x37, H2 = 0x38;
-    public static final int A3 = 0x40, B3 = 0x41, C3 = 0x42, D3 = 0x43, E3 = 0x44, F3 = 0x45, G3 = 0x46, H3 = 0x47;
-    public static final int A4 = 0x4f, B4 = 0x50, C4 = 0x51, D4 = 0x52, E4 = 0x53, F4 = 0x54, G4 = 0x55, H4 = 0x56;
-    public static final int A5 = 0x5e, B5 = 0x5f, C5 = 0x60, D5 = 0x61, E5 = 0x62, F5 = 0x63, G5 = 0x64, H5 = 0x65;
-    public static final int A6 = 0x6d, B6 = 0x6e, C6 = 0x6f, D6 = 0x70, E6 = 0x71, F6 = 0x72, G6 = 0x73, H6 = 0x74;
-    public static final int A7 = 0x7c, B7 = 0x7d, C7 = 0x7e, D7 = 0x7f, E7 = 0x80, F7 = 0x81, G7 = 0x82, H7 = 0x83;
-    public static final int A8 = 0x8b, B8 = 0x8c, C8 = 0x8d, D8 = 0x8e, E8 = 0x8f, F8 = 0x90, G8 = 0x91, H8 = 0x92;
+    // Bitmaps
+    private static final long EMPTY = 0x0000000000000000L;
 
-    public static final int[] SQUARES_64 = {
-            A1, B1, C1, D1, E1, F1, G1, H1,
-            A2, B2, C2, D2, E2, F2, G2, H2,
-            A3, B3, C3, D3, E3, F3, G3, H3,
-            A4, B4, C4, D4, E4, F4, G4, H4,
-            A5, B5, C5, D5, E5, F5, G5, H5,
-            A6, B6, C6, D6, E6, F6, G6, H6,
-            A7, B7, C7, D7, E7, F7, G7, H7,
-            A8, B8, C8, D8, E8, F8, G8, H8
+    private static final long RANK_8 = 0xFF00000000000000L;
+    private static final long RANK_7 = 0x00FF000000000000L;
+    private static final long RANK_6 = 0x0000FF0000000000L;
+    private static final long RANK_5 = 0x000000FF00000000L;
+    private static final long RANK_4 = 0x00000000FF000000L;
+    private static final long RANK_3 = 0x0000000000FF0000L;
+    private static final long RANK_2 = 0x000000000000FF00L;
+    private static final long RANK_1 = 0x00000000000000FFL;
+
+    private static final long[] RANKS = {
+            RANK_8, RANK_7, RANK_6, RANK_5, RANK_4, RANK_3, RANK_2, RANK_1,
     };
 
-    public static final int NO_OF_RANKS = 12; // 12 x 15
-    public static final int NO_OF_FILES = 15; // 12 x 15
-    public static final int NO_OF_SQUARES = NO_OF_RANKS * NO_OF_FILES; // 180
+    public static final long FILE_A = 0x0101010101010101L;
+    private static final long FILE_B = 0x0202020202020202L;
+    private static final long FILE_C = 0x0404040404040404L;
+    private static final long FILE_D = 0x0808080808080808L;
+    private static final long FILE_E = 0x1010101010101010L;
+    private static final long FILE_F = 0x2020202020202020L;
+    private static final long FILE_G = 0x4040404040404040L;
+    public static final long FILE_H = 0x8080808080808080L;
 
-    // Borders
-    public static final int UPPER_BORDER_SIZE = 2;
-    public static final int LOWER_BORDER_SIZE = 2;
-    public static final int LEFT_BORDER_SIZE = 4;
-    public static final int RIGHT_BORDER_SIZE = 3;
+    private static final long[] FILES = new long[]{
+            FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
+    };
+
+    // Board
+    private static final int NO_OF_SQUARES = 64;
+
+    public static final String[] SQUARES = new String[]{
+        "H1", "G1", "F1", "E1", "D1", "C1", "B1", "A1",
+        "H2", "G2", "F2", "E2", "D2", "C2", "B2", "A2",
+        "H3", "G3", "F3", "E3", "D3", "C3", "B3", "A3",
+        "H4", "G4", "F4", "E4", "D4", "C4", "B4", "A4",
+        "H5", "G5", "F5", "E5", "D5", "C5", "B5", "A5",
+        "H6", "G6", "F6", "E6", "D6", "C6", "B6", "A6",
+        "H7", "G7", "F7", "E7", "D7", "C7", "B7", "A7",
+        "H8", "G8", "F8", "E8", "D8", "C8", "B8", "A8",
+    };
 
     // Colors
-    public static final int WHITE = 0;
-    public static final int BLACK = 1;
-    public static final int NO_OF_COLORS = 2;
-
-    // Increments/deltas
-    public static final int NW = +14; public static final int NE = +16;
-    public static final int SW = -16; public static final int SE = -14;
-
-    public static final int N = +15; public static final int S = -15;
-    public static final int E =  +1; public static final int W =  -1;
-
-    // Node types
-    public static final int SCORE_ALL = 0;
-    public static final int SCORE_CUT = 1;
-    public static final int SCORE_EXACT = 2;
+    private static final int WHITE = 0;
+    private static final int BLACK = 1;
 
     ///////////////////////////////////////////////////////////////////////////
     // Member variables
     ///////////////////////////////////////////////////////////////////////////
 
-    public int[] squares;           // 15x8 board representation
-    public int[] indices;           // Indexes to the piece-lists
-    public int sideToMove;          // Who's turn is it?
-    public long key;                // The hash of this board state
-    public PieceList pieces;        // Keeps track of the pieces.
-    public Result result;           // The result of the current state.
+    public long WP; // White pieces.
+    public long BP; // Black pieces.
+    private int sideToMove;
+    private Result result;
 
     ///////////////////////////////////////////////////////////////////////////
-    // Member functions
+    // Functions
     ///////////////////////////////////////////////////////////////////////////
 
     public DiscoveryState() {
-        this(INITIAL_FEN);
+        setup(INITIAL_FEN);
     }
 
     public DiscoveryState(String fen) {
-
-        // Initializes the squares.
-        squares = new int[NO_OF_SQUARES];
-        indices = new int[NO_OF_SQUARES];
-
-        // Puts a border around the board and fills the actual board with "empty squares":
-        for (int a = 0; a < NO_OF_SQUARES; a++) {
-            squares[a] = Square.BORDER;
-        }
-        for (int a = 0; a < SQUARES_64.length; a++) {
-            squares[SQUARES_64[a]] = Square.EMPTY;
-        }
-
-        // Initializes the piece-list.
-        pieces = new PieceList(16);
-
-        // Setup the initial FEN.
         setup(fen);
-
-        // Generate a Zobrist key for the board.
-        key = Zobrist.getZobristKey(this);
-        System.out.println(key);
     }
 
-    @Override
-    public ArrayList<Move> getActions(Move first) {
-        ArrayList<Move> moves = new ArrayList<Move>();
+    public ArrayList<Integer> getAllMoves(int first) {
+        ArrayList<Integer> moves = new ArrayList<Integer>();
 
-        int from;
-        int otherSide = oppColor(sideToMove);
-        while ((from = pieces.getNext(sideToMove)) != Square.NONE) {
-            int[] deltas = (sideToMove == WHITE ? new int[]{NW, N, NE} : new int[]{SE, S, SW});
-            for (int inc : deltas) {
-                int to = from + inc;
-                boolean isCapture;
-                if (Square.isEmpty(squares[to])) {
-                    isCapture = false;
-                } else if (inc != N && inc != S && squares[to] == otherSide) {
-                    isCapture = true;
-                } else {
-                    continue;
-                }
-                Move firstMoveBackup = null;
-                Move move = new Move(from, -1, to, -1, isCapture);
+        long emptySquares = ~(WP | BP);
+        if (sideToMove == WHITE) {
+            long WP_N              = (WP << 8) & emptySquares;
+            long WP_NW             = (WP & ~FILE_H) << 9;
+            long WP_NE             = (WP & ~FILE_A) << 7;
+            long WP_NW_NONCAPTURES = WP_NW & emptySquares;
+            long WP_NE_NONCAPTURES = WP_NE & emptySquares;
+            long WP_NW_CAPTURES    = WP_NW & BP;
+            long WP_NE_CAPTURES    = WP_NE & BP;
 
-                // Orders the moves in PV-move, captures and non-captures.
-                if (first != null && move.equals(first)) {
-                    assert firstMoveBackup == null;
-                    firstMoveBackup = new Move(from, -1, to, -1, isCapture);
-                } else {
-                    if (isCapture) {
-                        moves.add(0, move);
-                    } else {
-                        moves.add(move);
-                    }
-                }
-                // Prepends the PV move.
-                if (firstMoveBackup != null) {
-                    moves.add(0, firstMoveBackup);
-                }
-            }
+            addMoves(moves, WP_NW_CAPTURES, -9, true, first);
+            addMoves(moves, WP_NE_CAPTURES, -7, true, first);
+            addMoves(moves, WP_N, -8, false, first);
+            addMoves(moves, WP_NW_NONCAPTURES, -9, false, first);
+            addMoves(moves, WP_NE_NONCAPTURES, -7, false, first);
+        } else {
+            long BP_S              = (BP >>> 8) & emptySquares;
+            long BP_SW             = (BP & ~FILE_H) >>> 7;
+            long BP_SE             = (BP & ~FILE_A) >>> 9;
+            long BP_SW_NONCAPTURES = BP_SW & emptySquares;
+            long BP_SE_NONCAPTURES = BP_SE & emptySquares;
+            long BP_SW_CAPTURES    = BP_SW & WP;
+            long BP_SE_CAPTURES    = BP_SE & WP;
+
+            addMoves(moves, BP_SW_CAPTURES, 7, true, first);
+            addMoves(moves, BP_SE_CAPTURES, 9, true, first);
+            addMoves(moves, BP_S, 8, false, first);
+            addMoves(moves, BP_SW_NONCAPTURES, 7, false, first);
+            addMoves(moves, BP_SE_NONCAPTURES, 9, false, first);
         }
 
         return moves;
     }
 
-    @Override
-    public void make(Move move) {
+    private void addMoves(ArrayList<Integer> moves, long bitboard, int delta, boolean areCaptures, int pv) {
+        while (bitboard != 0) {
+            long h = Long.highestOneBit(bitboard);
+            bitboard &= ~h;
+            int pos = Long.numberOfTrailingZeros(h);
+            int move = DiscoveryMove.createMove(pos + delta, pos, areCaptures);
+            if (pv != DiscoveryMove.MOVE_NONE && pv == move) {
+                moves.add(0, move);
+            } else {
+                moves.add(move);
+            }
+        }
+    }
 
-        // Assertions.
+    public void make(int move) {
         assert !isTerminal();
-        assert squares[move.from_col] == sideToMove;
-        assert !move.capture || squares[move.to_col] == oppColor(sideToMove);
 
-        // Retrieve the from and to squares.
-        int from = move.from_col;
-        int to   = move.to_col;
+        int from    = DiscoveryMove.getFrom(move);
+        int to      = DiscoveryMove.getTo(move);
+        boolean capture = DiscoveryMove.isCapture(move);
 
-        // Clears the "from" square.
-        clearSquare(from, true);
+        // TODO: CODE DUPLICATION OF DEATH.
+        if (sideToMove == WHITE) {
+            // Clears the "from" square.
+            WP &= ~(1L << from);
 
-        // Clear the "to" square as well in case of a capture.
-        if (move.capture) {
-            assert squares[to] == oppColor(sideToMove);
-            clearSquare(to, true);
-            if (pieces.counter[oppColor(sideToMove)] == 0) {
+            // Clear the opponents "to" square in case of a capture.
+            if (capture) {
+                BP &= ~(1L << to);
+                if (Long.bitCount(BP) == 0) {
+                    result = Result.Loss;
+                }
+            }
+
+            // Put the to the "to" square.
+            WP |= (1L << to);
+
+            // Checks if "to" square was on rank 1 or rank 8, if was: loss.
+            if ((WP & RANK_8) != 0) { // Oh my god, (WP & RANK_8) > 0 = A LOT of debugging effort.
+                result = Result.Loss;
+            }
+        } else {
+            // Clears the "from" square.
+            BP &= ~(1L << from);
+
+            // Clear the opponents "to" square in case of a capture.
+            if (capture) {
+                WP &= ~(1L << to);
+                if (Long.bitCount(WP) == 0) {
+                    result = Result.Loss;
+                }
+            }
+
+            // Put the to the "to" square.
+            BP |= (1L << to);
+
+            // Checks if "to" square was on rank 1 if was: loss.
+            if ((BP & RANK_1) != 0) {
                 result = Result.Loss;
             }
         }
 
-        // Checks if the "to" square is on RANK_1 or RANK_8.
-        if (Square.getRank(to) == Square.RANK_8 || Square.getRank(to) == Square.RANK_1) {
-            result = Result.Loss;
-        }
-
-        // The piece arrives at its "to" square.
-        fillSquare(to, sideToMove, true);
-
-        // Toggle the side to move
         sideToMove = oppColor(sideToMove);
-
-        // Update the hash-key.
-        key ^= Zobrist.SIDE_TO_MOVE;
     }
 
-    @Override
-    public void retract(Move move) {
+    public void retract(int move) {
 
         // Retrieve the from and to square.
-        int from = move.from_col;
-        int to   = move.to_col;
+        int from        = DiscoveryMove.getFrom(move);
+        int to          = DiscoveryMove.getTo(move);
+        boolean capture = DiscoveryMove.isCapture(move);
 
         // Toggle the side to move:
         sideToMove = oppColor(sideToMove);
 
-        // Update the hash-key.
-        key ^= Zobrist.SIDE_TO_MOVE;
-
-        // Puts the piece back to its initial location (from) and clears the "to"-square:
-        clearSquare(to, true);
-        fillSquare(from, sideToMove, true);
-
-        // Puts a piece back in its place in case of a capture.
-        if (move.capture) {
-            fillSquare(to, oppColor(sideToMove), true);
+        if (sideToMove == WHITE) {
+            // Puts the piece back to its initial location (from) and clears the "to"-square:
+            WP &= ~(1L << to);
+            WP |= (1L << from);
+            if (capture) {
+                BP |= (1L << to);
+            }
+        } else {
+            BP &= ~(1L << to);
+            BP |= (1L << from);
+            if (capture) {
+                WP |= (1L << to);
+            }
         }
 
         // No longer a terminal node (in case we were in a terminal node).
         result = Result.Unknown;
     }
 
-    @Override
     public boolean isTerminal() {
         return result != Result.Unknown;
     }
 
-    @Override
     public Result getResult() {
         return result;
     }
 
-    @Override
     public int getPlayerToMove() {
         return sideToMove;
     }
 
-    @Override
     public void reset() {
         setup(INITIAL_FEN);
     }
 
     @Override
-    public void display() {
-        System.out.println("Turn:       " + (sideToMove == WHITE ? "White" : "Black"));
-        System.out.println("Evaluation: " + getEvaluation());
-        System.out.println();
-        System.out.print("  a b c d e f g h\n8 ");
-
-        for (int a = SQUARES_64.length - 8, b = 7; a >= 0; a -= 8) {
-            for (int c = 0; c < 8; c++) {
-                if (Square.isEmpty(squares[SQUARES_64[a + c]])) {
-                    System.out.print(". ");
-                } else {
-                    System.out.print(squares[SQUARES_64[a + c]] == WHITE ? "w " : "b ");
-                }
-            }
-            if (b != 0) {
-                System.out.print("\n" + b-- + " ");
-            }
-        }
-        System.out.println();
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (int rank : new int[]{ A8, A7, A6, A5, A4, A3, A2, A1 }) {
-            int square = rank;
-            for (int i = 0; i < 8; i++) {
-                char c = ' ';
-                switch(squares[square + i]) {
-                    case Square.EMPTY: c = '.'; break;
-                    case Square.WHITE: c = 'w'; break;
-                    case Square.BLACK: c = 'b'; break;
-                    default: assert false; break;
-                }
-                sb.append(c);
-            }
+        int index = 63;
+        while (index >= 0) {
+            long whiteSquare = (WP >> index) & 0x01;
+            long blackSquare = (BP >> index) & 0x01;
+            if (whiteSquare > 0) sb.append("w");
+            else if (blackSquare > 0) sb.append("b");
+            else sb.append(".");
+            index--;
         }
-
         sb.append(' ');
         sb.append(sideToMove == WHITE ? '0' : '1');
         return sb.toString();
     }
 
-    @Override
-    public int getEvaluation() {
-        int value = 0;
-        if (isTerminal()) {
-            if (result == Result.Win) {
-                value = State.WIN_VALUE;
-            } else if (result == Result.Loss) {
-                value = State.LOSS_VALUE;
-            } else {
-                assert false : "Should not happen.";
-                value = 0;
+    public void display() {
+        int index = 63;
+        System.out.println("Side: " + (sideToMove == WHITE ? "White" : "Black"));
+        System.out.println("  A B C D E F G H ");
+        for (int rank = 0; rank < 8; rank++) {
+            System.out.print((8 - rank) + " ");
+            for (int col = 0; col < 8; col++) {
+                long whiteSquare = (WP >> index) & 0x01;
+                long blackSquare = (BP >> index) & 0x01;
+                if (whiteSquare > 0) {
+                    System.out.print("w ");
+                } else if (blackSquare > 0) {
+                    System.out.print("b ");
+                } else {
+                    System.out.print(". ");
+                }
+
+                index--;
             }
-        } else {
-            value = pieces.counter[WHITE] - pieces.counter[BLACK];
-            if (sideToMove == BLACK) {
-                value = -value;
-            }
+            System.out.println();
         }
-        return value;
+        System.out.println("  A B C D E F G H ");
+        System.out.println();
     }
 
-    @Override
+    public int getEvaluation() {
+        // Is terminal?
+        if (isTerminal()) {
+            switch (result) {
+                case Win: return State.WIN_VALUE;
+                case Loss: return State.LOSS_VALUE;
+                default: System.out.println("should not happen"); System.exit(-1);
+            }
+        }
+
+        // Not a terminal node: Evaluate material.
+        int value = Long.bitCount(WP) - Long.bitCount(BP);
+
+        return (sideToMove == WHITE ? value : -value);
+    }
+
     public Move isLegalMove(String strMove) {
         return null;
     }
 
-    @Override
     public boolean setup(String fen) {
+        // Valid FEN?
         Matcher matcher = FEN_PATTERN.matcher(fen);
-
         if (!matcher.find()) {
             System.out.println("> INVALID FEN, EXITING: " + fen);
             System.exit(-1);
@@ -387,154 +311,49 @@ public class DiscoveryState implements State {
         // Resets the state.
         empty();
 
-        int index = 0;
-        for (int rank : new int[]{ A8, A7, A6, A5, A4, A3, A2, A1 }) {
-            int square = rank;
-            for (int i = 0; i < 8; i++) {
-                char c = fen.charAt(index);
-                if (c != '.') {
-                    fillSquare(square, c == 'w' ? Square.WHITE : Square.BLACK, false);
-                }
-                square++;
-                index++;
+        // Create the WP and BP bitboards.
+        for (int i = 0; i < NO_OF_SQUARES; i++) {
+            switch (matcher.group(1).charAt(i)) {
+                case 'w': WP |= (1L << (63L - i)); break;
+                case 'b': BP |= (1L << (63L - i)); break;
             }
         }
-        index++;
 
-        sideToMove = fen.charAt(index) == '0' ? WHITE : BLACK;
-
+        // Parse the side to move.
+        sideToMove = matcher.group(2).equals("0") || matcher.group(2).equals("") ? WHITE : BLACK;
         result = Result.Unknown;
 
         // TODO: Validate legality?
-
         return true;
     }
 
-    private void fillSquare(int square, int color, boolean rehash) {
-
-        if (rehash) {
-            // Adds this piece on this square to the hash-key:
-            key ^= Zobrist.PIECES[color][square];
-        }
-
-        // Updates the piece list.
-        pieces.add(color, square);
-
-        // ...and update the square:
-        squares[square] = color;
-    }
-
-    private void clearSquare(int square, boolean rehash) {
-
-        // Retrieve the color of the square in question.
-        int color = squares[square];
-
-        // Retracts the hashing.
-        if (rehash) {
-            // Undoes this piece on this square from the hash-key:
-            key ^= Zobrist.PIECES[color][square];
-        }
-
-        // Updates the piece-list.
-        pieces.remove(color, indices[square]);
-
-        // ...and "emptify" the square.
-        squares[square] = Square.EMPTY;
-    }
-
     private void empty() {
-        // Initializes the squares.
-        for (int a = 0; a < NO_OF_SQUARES; a++) {
-            squares[a] = Square.BORDER;
-            indices[a] = 0;
-        }
-        for (int a = 0; a < SQUARES_64.length; a++) {
-            squares[SQUARES_64[a]] = Square.EMPTY;
-        }
-
-        // Initializes the piece-list.
-        pieces = new PieceList(16);
-
-        sideToMove = 0;
+        WP = EMPTY;
+        BP = EMPTY;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Static functions
-    ///////////////////////////////////////////////////////////////////////////
+    public void printBitboard(long bb) {
+        int index = 63;
+        for (int rank = 0; rank < 8; rank++) {
+            for (int i = 0; i < 8; i++) {
+                System.out.print((bb >> index) & 0x01);
+                index--;
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
 
     public static int oppColor(int color) {
         return color ^ 1;
     }
 
-}
-
-class Square {
-
-    // Constants
-
-    public static final int NONE = -1;
-    public static final int WHITE = 0;
-    public static final int BLACK = 1;
-    public static final int EMPTY = 2;
-    public static final int BORDER = 3;
-
-    public static final int RANK_1 = 1;
-    public static final int RANK_8 = 8;
-
-    public static final String[] SQUARE_NAMES = {
-            "", "", "", "", "A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1", "", "", "",
-            "", "", "", "", "A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2", "", "", "",
-            "", "", "", "", "A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3", "", "", "",
-            "", "", "", "", "A4", "B4", "C4", "D4", "E4", "F4", "G4", "H4", "", "", "",
-            "", "", "", "", "A5", "B5", "C5", "D5", "E5", "F5", "G5", "H5", "", "", "",
-            "", "", "", "", "A6", "B6", "C6", "D6", "E6", "F6", "G6", "H6", "", "", "",
-            "", "", "", "", "A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7", "", "", "",
-            "", "", "", "", "A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8", "", "", "",
-    };
-
-    private static final int[] RANKS = {
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
-            0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0,
-            0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0,
-            0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0,
-            0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0,
-            0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0,
-            0, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 0, 0, 0,
-            0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 8, 0, 0, 0
-    };
-
-    private static final int[] FILES = {
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0,
-            0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0
-    };
-
-    // Functions
-
-    public static boolean isEmpty(int square) {
-        return square == Square.EMPTY;
+    public void makeNullMove() {
+        sideToMove = oppColor(sideToMove);
     }
 
-    public static String getSquareName(int square) {
-        int indexToArray = square - (DiscoveryState.UPPER_BORDER_SIZE * DiscoveryState.NO_OF_FILES);
-        return SQUARE_NAMES[indexToArray];
-    }
-
-    public static int getRank(int square) {
-        return RANKS[square];
-    }
-
-    public static int getFile(int square) {
-        return FILES[square];
+    public void retractNullMove() {
+        sideToMove = oppColor(sideToMove);
     }
 
 }

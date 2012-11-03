@@ -11,9 +11,10 @@ public interface Agent
     // Agent think limit.
     public void setThinklimit( long maxLimit, long maxNodes, long maxTimeMsec );
 
-    // Pick a move to play, return null if terminal position.
-    public Move playMove( State state );
 
     public String getName();
+
+    // Pick a move to play, return null if terminal position.
+    public Move playMove( State state, Game gameHistory );
 
 }

@@ -26,23 +26,13 @@ public class Move
 
     public String toStr()
     {
-        if (from_row != -1 && from_row != -2) {
-            String str = "";
-            str += s_columns.charAt(from_col);
-            str += s_rows.charAt(from_row);
-            str += (capture ? "x" : "-" );
-            str += s_columns.charAt(to_col);
-            str += s_rows.charAt(to_row);
-            return str;
-        }
-        if (from_row == -2) {
-            String s = "" + BitboardState.SQUARES[from_col] +
-                    (capture ? "x" : "-") + BitboardState.SQUARES[to_col];
-            //+ " (" +
-            //        from_col + "-" + to_col + ")";;
-            return s.toLowerCase();
-        }
-        return toString();
+        String str = "";
+        str += s_columns.charAt(from_col);
+        str += s_rows.charAt(from_row);
+        str += (capture ? "x" : "-" );
+        str += s_columns.charAt(to_col);
+        str += s_rows.charAt(to_row);
+        return str;
     }
 
     boolean equals ( Move other ) {
@@ -51,12 +41,6 @@ public class Move
             && ( to_col   == other.to_col   )
             && ( to_row   == other.to_row   )
             && ( capture  == other.capture  );
-    }
-
-    public String toString() {
-        String s = Square.getSquareName(from_col)
-            + (capture ? "x" : "-") + Square.getSquareName(to_col);
-        return s.toLowerCase();
     }
 
 }

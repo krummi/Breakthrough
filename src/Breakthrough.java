@@ -9,28 +9,28 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class Breakthrough {
 
+    final static int MAX_ROWS = 8;
+    final static int MAX_COLS = 8;
+
     public static void main( String[] args )
     {
+
         System.out.println( "Welcome to Breakthrough! ('h' for help)" );
 
-        State            state             = new BreakthroughState(8, 8);
-        Agent            agents[]          = {
-                new AgentAlphaBetaPlain(),
-                new AgentMinimax()
-        };
-        ArrayList<Move>  moveHistory       = new ArrayList<Move>();
-        long             maxSearchLimit    = 0;        // 0 = limit disabled.
-        long             maxSearchTimeMsec = 1000;     // 0 = limit disabled.
+        State            state             = new BreakthroughState( MAX_ROWS, MAX_COLS );
+        Agent            agents[]          = { new AgentAlphaBeta(), new AgentDiscovery() };
+        Game             game              = new Game( new BreakthroughState( (BreakthroughState) state ) );
+        long             maxSearchLimit    = 0;     // 0 = limit disabled.
+        long             maxSearchTimeMsec = 1000;  // 0 = limit disabled.
         long             maxSearchNodes    = 0;
         boolean          silenceAgent      = false;
         boolean          silenceDisplay    = false;
 
-        agents[0].setSilence(silenceAgent);
+        agents[0].setSilence( silenceAgent );
         agents[1].setSilence(silenceAgent);
         agents[0].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
         agents[1].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
@@ -80,7 +80,7 @@ public class Breakthrough {
                         else {
                             state.reset();
                         }
-                        moveHistory.clear();
+                        game.reset( state );
                         state.display();
                     }
                     else if ( command.equals("m") ) {
@@ -89,9 +89,9 @@ public class Breakthrough {
                             String strMove = st.nextToken();
                             Move move = state.isLegalMove( strMove );
                             if ( move != null ) {
-                               state.make( move );
-                               moveHistory.add( move );
-                               state.display();
+                                state.make( move );
+                                game.addMove( move );
+                                state.display();
                             }
                             else {
                                 System.out.print( " => State error, illegal move: '" + strMove + "'" );
@@ -104,10 +104,10 @@ public class Breakthrough {
                     }
                     else if ( command.equals("r") ) {
                         // Retract a move.
-                        if ( !moveHistory.isEmpty() ) {
-                            Move move = moveHistory.get( moveHistory.size() - 1 );
-                            state.retract( move );
-                            moveHistory.remove( moveHistory.size() - 1 );
+                        Move lastMove = game.getLastMove();
+                        if ( lastMove != null ) {
+                            state.retract( lastMove );
+                            game.removeLastMove();
                             state.display();
                         }
                     }
@@ -117,7 +117,7 @@ public class Breakthrough {
                             try {
                                 maxSearchLimit = Long.valueOf(st.nextToken());
                                 System.out.println( "l:" + maxSearchLimit +
-                                                    " n:" + maxSearchNodes + " t:" + maxSearchTimeMsec );
+                                        " n:" + maxSearchNodes + " t:" + maxSearchTimeMsec );
                                 agents[0].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
                                 agents[1].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
                             } catch (NumberFormatException e ) {
@@ -134,7 +134,7 @@ public class Breakthrough {
                             try {
                                 maxSearchTimeMsec = Long.valueOf(st.nextToken());
                                 System.out.println( "l:" + maxSearchLimit +
-                                                    " n:" + maxSearchNodes + " t:" + maxSearchTimeMsec );
+                                        " n:" + maxSearchNodes + " t:" + maxSearchTimeMsec );
                                 agents[0].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
                                 agents[1].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
                             } catch (NumberFormatException e ) {
@@ -151,7 +151,7 @@ public class Breakthrough {
                             try {
                                 maxSearchNodes = Long.valueOf(st.nextToken());
                                 System.out.println( "l:" + maxSearchLimit +
-                                                    " n:" + maxSearchNodes + " t:" + maxSearchTimeMsec );
+                                        " n:" + maxSearchNodes + " t:" + maxSearchTimeMsec );
                                 agents[0].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
                                 agents[1].setThinklimit( maxSearchLimit, maxSearchNodes, maxSearchTimeMsec );
                             } catch (NumberFormatException e ) {
@@ -184,10 +184,10 @@ public class Breakthrough {
                     else if ( command.equals("g") ) {
                         // Search to find the best move, then play it.
                         if ( !state.isTerminal() ) {
-                            Move move = agents[state.getPlayerToMove()].playMove(state);
+                            Move move = agents[state.getPlayerToMove()].playMove(state, game);
                             if ( move != null ) {
                                 state.make( move );
-                                moveHistory.add( move );
+                                game.addMove( move );
                                 System.out.print( "bestmove " );
                                 System.out.println( move.toStr() );
                                 if ( !silenceDisplay ) { state.display(); }
@@ -224,14 +224,13 @@ public class Breakthrough {
                         // Autoplay a <n> game match.
                         if ( st.hasMoreTokens() ) {
                             try {
-                                System.out.println(String.format(
-                                        "> %s (white) vs. %s (black)",
-                                        agents[0].getName(), agents[1].getName()));
                                 int maxGamePairs = Integer.valueOf(st.nextToken());
                                 int[] outcome = {0, 0};
                                 for ( int n=0 ; n < maxGamePairs; ++n ) {
-                                   playAMatch(agents, 0, state, outcome, silenceAgent);
-                                   playAMatch(agents, 1, state, outcome, silenceAgent);
+                                    playAMatch(agents, 0, state, game, outcome);
+                                    System.out.println( "outcome: " + outcome[0] + " - " + outcome[1] );
+                                    playAMatch(agents, 1, state, game, outcome);
+                                    System.out.println( "outcome: " + outcome[0] + " - " + outcome[1] );
                                 }
                                 System.out.println( "total: " + outcome[0] + " - " + outcome[1] );
                             } catch (NumberFormatException e ) {
@@ -257,22 +256,25 @@ public class Breakthrough {
             }
 
         } catch (IOException ioe) {
-           System.out.println("IO error reading standard input.");
-           System.exit(1);
+            System.out.println("IO error reading standard input.");
+            System.exit(1);
         }
     }
 
 
-    private static void playAMatch( Agent agents[], int goesFirst, State state, int [] outcome, boolean silence)
+    private static void playAMatch( Agent agents[], int goesFirst, State state, Game game, int [] outcome )
     {
         int toMove = goesFirst;
         state.reset();
+        game.reset( state );
         while ( !state.isTerminal() ) {
-            if (!silence) state.display();
-            if (!silence) System.out.println("To go: " + agents[toMove].getName());
+            System.out.println("To move: " + agents[toMove].getName());
             Agent agent = agents[ toMove ];
-            Move move = agent.playMove( state );
+            Move move = agent.playMove( state, game );
             state.make( move );
+            game.addMove( move );
+            //System.out.print( "bestmove " );
+            //System.out.println( move.toStr() );
             toMove = ( toMove==0 ? 1 : 0 );
         }
         int lastMove = (toMove == 0) ? 1 : 0;
@@ -282,6 +284,5 @@ public class Breakthrough {
         else if ( state.getResult() == State.Result.Loss ) {
             outcome[ lastMove ] += 1;
         }
-        System.out.println( "outcome: " + outcome[0] + " - " + outcome[1] );
     }
 }
