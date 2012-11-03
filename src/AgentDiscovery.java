@@ -92,9 +92,9 @@ public class AgentDiscovery implements Agent {
             if ( !m_silent ) { System.out.println(); }
         }
 
-        System.out.println("nodes  : " + nodes);
-        System.out.println("qnodes : " + qnodes);
-        System.out.println("trans  : " + transHits);
+        if (!m_silent) System.out.println("nodes  : " + nodes);
+        if (!m_silent) System.out.println("qnodes : " + qnodes);
+        if (!m_silent) System.out.println("trans  : " + transHits);
 
         // Apply the move to our internal state.
         state.make(bestMove);
