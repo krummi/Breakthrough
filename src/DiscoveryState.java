@@ -13,10 +13,6 @@ public class DiscoveryState {
     // Constants
     ///////////////////////////////////////////////////////////////////////////
 
-    // Win/Loss values
-    public static int WIN_VALUE  =  10000;
-    public static int LOSS_VALUE = -10000;
-
     // FEN
     private static final String INITIAL_FEN =
             "bbbbbbbbbbbbbbbb................................wwwwwwwwwwwwwwww 0";
@@ -53,22 +49,23 @@ public class DiscoveryState {
     };
 
     // Board
-    private static final int NO_OF_SQUARES = 64;
+    public static final int NO_OF_SQUARES = 64;
+    public static final int NO_OF_COLORS = 2;
 
     public static final String[] SQUARES = new String[]{
-        "H1", "G1", "F1", "E1", "D1", "C1", "B1", "A1",
-        "H2", "G2", "F2", "E2", "D2", "C2", "B2", "A2",
-        "H3", "G3", "F3", "E3", "D3", "C3", "B3", "A3",
-        "H4", "G4", "F4", "E4", "D4", "C4", "B4", "A4",
-        "H5", "G5", "F5", "E5", "D5", "C5", "B5", "A5",
-        "H6", "G6", "F6", "E6", "D6", "C6", "B6", "A6",
-        "H7", "G7", "F7", "E7", "D7", "C7", "B7", "A7",
-        "H8", "G8", "F8", "E8", "D8", "C8", "B8", "A8",
+        "H1", "G1", "F1", "E1", "D1", "C1", "B1", "A1", // 0  - 7
+        "H2", "G2", "F2", "E2", "D2", "C2", "B2", "A2", // 8  - 15
+        "H3", "G3", "F3", "E3", "D3", "C3", "B3", "A3", // 16 - 23
+        "H4", "G4", "F4", "E4", "D4", "C4", "B4", "A4", // 24 - 31
+        "H5", "G5", "F5", "E5", "D5", "C5", "B5", "A5", // 32 - 39
+        "H6", "G6", "F6", "E6", "D6", "C6", "B6", "A6", // 40 - 47
+        "H7", "G7", "F7", "E7", "D7", "C7", "B7", "A7", // 48 - 55
+        "H8", "G8", "F8", "E8", "D8", "C8", "B8", "A8", // 56 - 63
     };
 
     // Colors
-    private static final int WHITE = 0;
-    private static final int BLACK = 1;
+    public static final int WHITE = 0;
+    public static final int BLACK = 1;
 
     // Deltas
     private static final int DELTA_N  = -8; private static final int DELTA_S  = 8;
@@ -79,10 +76,11 @@ public class DiscoveryState {
     // Member variables
     ///////////////////////////////////////////////////////////////////////////
 
-    public long WP; // White pieces.
-    public long BP; // Black pieces.
+    private long WP; // White pieces.
+    private long BP; // Black pieces.
     private int sideToMove;
     private Result result;
+    public long key;
 
     ///////////////////////////////////////////////////////////////////////////
     // Functions
@@ -177,37 +175,37 @@ public class DiscoveryState {
         // TODO: CODE DUPLICATION OF DEATH.
         if (sideToMove == WHITE) {
             // Clears the "from" square.
-            WP &= ~(1L << from);
+            WP &= ~(1L << from); key ^= Zobrist.PIECES[WHITE][from];
 
             // Clear the opponents "to" square in case of a capture.
             if (capture) {
-                BP &= ~(1L << to);
+                BP &= ~(1L << to); key ^= Zobrist.PIECES[BLACK][to];
                 if (Long.bitCount(BP) == 0) {
                     result = Result.Loss;
                 }
             }
 
-            // Put the to the "to" square.
-            WP |= (1L << to);
+            // Put the piece to the "to" square.
+            WP |= (1L << to); key ^= Zobrist.PIECES[WHITE][to];
 
             // Checks if "to" square was on rank 1 or rank 8, if was: loss.
-            if ((WP & RANK_8) != 0) { // Oh my god, (WP & RANK_8) > 0 = A LOT of debugging effort.
+            if ((WP & RANK_8) != 0) { // omg (WP & RANK_8) > 0 => A LOT of debugging effort.
                 result = Result.Loss;
             }
         } else {
             // Clears the "from" square.
-            BP &= ~(1L << from);
+            BP &= ~(1L << from); key ^= Zobrist.PIECES[BLACK][from];
 
             // Clear the opponents "to" square in case of a capture.
             if (capture) {
-                WP &= ~(1L << to);
+                WP &= ~(1L << to); key ^= Zobrist.PIECES[WHITE][to];
                 if (Long.bitCount(WP) == 0) {
                     result = Result.Loss;
                 }
             }
 
             // Put the to the "to" square.
-            BP |= (1L << to);
+            BP |= (1L << to); key ^= Zobrist.PIECES[BLACK][to];
 
             // Checks if "to" square was on rank 1 if was: loss.
             if ((BP & RANK_1) != 0) {
@@ -215,7 +213,11 @@ public class DiscoveryState {
             }
         }
 
+        // Swap the side to move.
         sideToMove = oppColor(sideToMove);
+
+        // Update the hash-key.
+        key ^= Zobrist.SIDE_TO_MOVE;
     }
 
     public void retract(int move) {
@@ -228,18 +230,21 @@ public class DiscoveryState {
         // Toggle the side to move:
         sideToMove = oppColor(sideToMove);
 
+        // Update the hash-key.
+        key ^= Zobrist.SIDE_TO_MOVE;
+
         if (sideToMove == WHITE) {
             // Puts the piece back to its initial location (from) and clears the "to"-square:
-            WP &= ~(1L << to);
-            WP |= (1L << from);
+            WP &= ~(1L << to);    key ^= Zobrist.PIECES[WHITE][to];
+            WP |= (1L << from);   key ^= Zobrist.PIECES[WHITE][from];
             if (capture) {
-                BP |= (1L << to);
+                BP |= (1L << to); key ^= Zobrist.PIECES[BLACK][to];
             }
         } else {
-            BP &= ~(1L << to);
-            BP |= (1L << from);
+            BP &= ~(1L << to);    key ^= Zobrist.PIECES[BLACK][to];
+            BP |= (1L << from);   key ^= Zobrist.PIECES[BLACK][from];
             if (capture) {
-                WP |= (1L << to);
+                WP |= (1L << to); key ^= Zobrist.PIECES[WHITE][to];
             }
         }
 
@@ -348,6 +353,9 @@ public class DiscoveryState {
         sideToMove = matcher.group(2).equals("0") || matcher.group(2).equals("") ? WHITE : BLACK;
         result = Result.Unknown;
 
+        // Update hash key.
+        key = Zobrist.getZobristKey(this);
+
         // TODO: Validate legality?
         return true;
     }
@@ -371,14 +379,6 @@ public class DiscoveryState {
 
     public static int oppColor(int color) {
         return color ^ 1;
-    }
-
-    public void makeNullMove() {
-        sideToMove = oppColor(sideToMove);
-    }
-
-    public void retractNullMove() {
-        sideToMove = oppColor(sideToMove);
     }
 
 }

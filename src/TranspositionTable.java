@@ -7,9 +7,9 @@ public class TranspositionTable {
         public int type;
         public int depth;
         public int eval;
-        public Move move;
+        public int move;
 
-        HashEntry(long key, int type, int depth, int eval, Move move) {
+        HashEntry(long key, int type, int depth, int eval, int move) {
             this.key = key;
             this.type = type;
             this.depth = depth;
@@ -51,7 +51,7 @@ public class TranspositionTable {
         return null;
     }
 
-    public void put(long key, int type, int depth, int eval, Move move) {
+    public void put(long key, int type, int depth, int eval, int move) {
 
         int hashKey = (int) (key % size);
         HashEntry entry = table[hashKey];
@@ -62,7 +62,7 @@ public class TranspositionTable {
         } else if (entry.depth <= depth) {
             // The depth is lower; replace.
             table[hashKey] = new HashEntry(key, type, depth, eval, move);
-        } else if (entry.key == key && entry.move == null) {
+        } else if (entry.key == key && entry.move == DiscoveryMove.MOVE_NONE) {
             // An entry was found with this key, but it did not contain any move.
             entry.move = move;
         } else {
@@ -73,11 +73,11 @@ public class TranspositionTable {
 
     public void putLeaf(long key, int eval, int alpha, int beta) {
         if (eval >= beta) {
-            put(key, OldState.SCORE_CUT, 0, eval, null);
+            put(key, OldState.SCORE_CUT, 0, eval, DiscoveryMove.MOVE_NONE);
         } else if (eval <= alpha) {
-            put(key, OldState.SCORE_ALL, 0, eval, null);
+            put(key, OldState.SCORE_ALL, 0, eval, DiscoveryMove.MOVE_NONE);
         } else {
-            put(key, OldState.SCORE_EXACT, 0, eval, null);
+            put(key, OldState.SCORE_EXACT, 0, eval, DiscoveryMove.MOVE_NONE);
         }
     }
 

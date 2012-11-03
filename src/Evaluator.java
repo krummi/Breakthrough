@@ -5,7 +5,8 @@ public class Evaluator {
     public static void main(String[] args) {
 
         String setup = null;
-        //setup = "bbbbbbbbbbbbbbbb................................wwwwwwwwwwwwwwww 0";
+        setup = "bbbbbbbbbbbbbbbb................................wwwwwwwwwwwwwwww 0";
+        setup = "b........wb.bb..bb.b.bb.........b....w...w.....ww..w....w.ww..ww 0";
 
         /*
         String setup =
@@ -19,8 +20,27 @@ public class Evaluator {
                 "wwwwwwww 1";
         */
 
-        setup = "b..............................................................w";
-        //String setup = "b........wb.bb..bb.b.bb.........b....w...w.....ww..w....w.ww..ww 1";
+        // Zobrist tester:
+
+        /*
+        BreakthroughState state = new BreakthroughState(8, 8);
+        state.setup(setup);
+        AgentDiscovery discovery = new AgentDiscovery();
+        discovery.state.setup(setup);
+        System.out.println("Initial: " + Zobrist.getZobristKey(discovery.state));
+        System.out.println("Key    : " + discovery.state.key);
+        discovery.setThinklimit(9, 0, 0);
+        Move m = discovery.playMove(state, new Game(state));
+        int move = DiscoveryMove.deserialize(m);
+        discovery.state.retract(move);
+        System.out.println("Key    : " + discovery.state.key);
+        //System.out.println("Move: " + m.toStr());
+        //Move m = DiscoveryMove.createMove(8, 16, false);
+        //discovery.
+
+
+
+        //setup = "b..............................................................w";
 
         //DiscoveryState state = new DiscoveryState();
         //state.setup(setup);
@@ -53,16 +73,16 @@ public class Evaluator {
         //String setup = "bbb.b.bbbbb.bbbb........w.b.b.....b.......w.www.wwwww.w...w.wwww 1";
 
         //OldState    state1 = new OldState();
-        BreakthroughState state1 = new BreakthroughState(8, 8);
-        state1.setup(setup);
+        //BreakthroughState state1 = new BreakthroughState(8, 8);
+        //state1.setup(setup);
 
         //DiscoveryState     state2 = new DiscoveryState();
         //state1.setup(setup);
         //state2.setup(setup);
 
-        Agent a = new AgentMCTS();
-        a.setSilence(false);
-        a.setThinklimit(10000, 0, 0);
+        //Agent a = new AgentMCTS();
+        //a.setSilence(false);
+        //a.setThinklimit(10000, 0, 0);
         //Move m = a.playMove(state1);
 
         /*
