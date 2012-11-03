@@ -130,6 +130,15 @@ public class AgentDiscovery implements Agent {
             }
         }
 
+        // Decide what move to consider first.
+        int firstMove = DiscoveryMove.MOVE_NONE;
+        if (firstMoveToLookAt != DiscoveryMove.MOVE_NONE) {
+            firstMove = firstMoveToLookAt;
+        } else if (entry != null && entry.move != DiscoveryMove.MOVE_NONE) {
+            firstMove = entry.move;
+        }
+
+
         // Terminal position?
         if (state.isTerminal()) {
             abort = reachedALimit();
@@ -138,7 +147,7 @@ public class AgentDiscovery implements Agent {
 
         // Horizon? Quiescence search!
         if (depth <= 0) {
-            eval = qsearch(ply, alpha, beta, firstMoveToLookAt);
+            eval = qsearch(ply, alpha, beta, DiscoveryMove.MOVE_NONE);
             transTable.putLeaf(state.key, eval, alpha, beta);
             abort = reachedALimit();
             return eval;
@@ -169,7 +178,7 @@ public class AgentDiscovery implements Agent {
         for (int move : moves) {
             state.make(move);
             assert Zobrist.getZobristKey(state) == state.key;
-            eval = -search(ply + 1, depth - 1, -beta, -alpha, DiscoveryMove.MOVE_NONE);
+            eval = -search(ply + 1, depth - 1, -beta, -alpha, firstMove);
             state.retract(move);
             if (abort) { break; }
 
@@ -203,13 +212,13 @@ public class AgentDiscovery implements Agent {
             */
         }
 
-        assert bestMove != DiscoveryMove.MOVE_NONE;
-
         // Updates the transposition table.
-        if (scoreType == SCORE_EXACT) {
-            transTable.put(state.key, SCORE_EXACT, depth, eval, bestMove);
-        } else {
-            transTable.put(state.key, SCORE_LOWER, depth, eval, bestMove);
+        if (!abort) {
+            if (scoreType == SCORE_EXACT) {
+                transTable.put(state.key, SCORE_EXACT, depth, eval, bestMove);
+            } else {
+                transTable.put(state.key, SCORE_LOWER, depth, eval, bestMove);
+            }
         }
 
         return bestValue;
