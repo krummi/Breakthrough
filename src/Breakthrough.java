@@ -274,6 +274,7 @@ public class Breakthrough {
             game.addMove( move );
             //System.out.print( "bestmove " );
             //System.out.println( move.toStr() );
+            state.display();
             toMove = ( toMove==0 ? 1 : 0 );
         }
         int lastMove = (toMove == 0) ? 1 : 0;

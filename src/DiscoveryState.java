@@ -7,6 +7,7 @@ public class DiscoveryState {
     ///////////////////////////////////////////////////////////////////////////
     // Types
     ///////////////////////////////////////////////////////////////////////////
+
     enum Result { Unknown, Loss, Win }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -32,7 +33,7 @@ public class DiscoveryState {
     private static final long RANK_1 = 0x00000000000000FFL;
 
     private static final long[] RANKS = {
-            RANK_8, RANK_7, RANK_6, RANK_5, RANK_4, RANK_3, RANK_2, RANK_1,
+            RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8
     };
 
     public static final long FILE_A = 0x0101010101010101L;
@@ -45,7 +46,12 @@ public class DiscoveryState {
     public static final long FILE_H = 0x8080808080808080L;
 
     private static final long[] FILES = new long[]{
-            FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
+            FILE_H, FILE_G, FILE_F, FILE_E, FILE_D, FILE_C, FILE_B, FILE_A
+    };
+
+    private static final long[] ADJACENT_FILES = new long[]{
+            FILE_G, (FILE_F | FILE_H), (FILE_E | FILE_G), (FILE_D | FILE_F),
+                    (FILE_C | FILE_E), (FILE_B | FILE_D), (FILE_A | FILE_C), FILE_B
     };
 
     // Board
@@ -63,6 +69,28 @@ public class DiscoveryState {
         "H8", "G8", "F8", "E8", "D8", "C8", "B8", "A8", // 56 - 63
     };
 
+    public static final int[] RANK_OF = new int[]{
+        0, 0, 0, 0, 0, 0, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        2, 2, 2, 2, 2, 2, 2, 2,
+        3, 3, 3, 3, 3, 3, 3, 3,
+        4, 4, 4, 4, 4, 4, 4, 4,
+        5, 5, 5, 5, 5, 5, 5, 5,
+        6, 6, 6, 6, 6, 6, 6, 6,
+        7, 7, 7, 7, 7, 7, 7, 7
+    };
+
+    public static final int[] FILE_OF = new int[]{
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0,
+        7, 6, 5, 4, 3, 2, 1, 0
+    };
+
     // Colors
     public static final int WHITE = 0;
     public static final int BLACK = 1;
@@ -76,11 +104,11 @@ public class DiscoveryState {
     // Member variables
     ///////////////////////////////////////////////////////////////////////////
 
-    private long WP; // White pieces.
-    private long BP; // Black pieces.
-    private int sideToMove;
+    private long WP;         // White pieces.
+    private long BP;         // Black pieces.
+    private int sideToMove;  // Who's move is it?
+    public long key;         // Continuously updated hash key.
     private Result result;
-    public long key;
 
     ///////////////////////////////////////////////////////////////////////////
     // Functions
@@ -94,6 +122,7 @@ public class DiscoveryState {
         setup(fen);
     }
 
+    // Probably the worst code ever.
     public ArrayList<Integer> getCaptureMoves(int first) {
         ArrayList<Integer> moves = new ArrayList<Integer>();
         if (sideToMove == WHITE) {
@@ -316,7 +345,7 @@ public class DiscoveryState {
             switch (result) {
                 case Win: return State.WIN_VALUE;
                 case Loss: return State.LOSS_VALUE;
-                default: System.out.println("should not happen"); System.exit(-1);
+                default: System.out.println("[1] Should not happen."); System.exit(-1);
             }
         }
 
@@ -324,6 +353,94 @@ public class DiscoveryState {
         int value = Long.bitCount(WP) - Long.bitCount(BP);
 
         return (sideToMove == WHITE ? value : -value);
+    }
+
+    // NEW EVALUATION STUFF.
+
+    private static final int PIECE_VALUE = 100;
+    private static final int DEFENCE_VALUE = 1;
+    private static final int EMPTY_COLUMN_PENALITY = -20;
+
+    public int getEvaluationNew() {
+        // Is terminal?
+        if (isTerminal()) {
+            switch (result) {
+                case Win: return State.WIN_VALUE;
+                case Loss: return State.LOSS_VALUE;
+                default: System.out.println("should not happen"); System.exit(-1);
+            }
+        }
+
+        // Initialization.
+        int color = sideToMove;
+        long us   = (color == WHITE ? WP : BP);
+        long them = (color == WHITE ? BP : WP);
+
+        // Not a terminal node: Evaluate material.
+        int whitePieces = Long.bitCount(WP) * PIECE_VALUE;
+        int blackPieces = Long.bitCount(BP) * PIECE_VALUE;
+        int value = whitePieces - blackPieces;
+
+        // Protection.
+        int evaluateEachWhite = evaluateEach(WHITE, WP) * DEFENCE_VALUE;
+        int evaluateEachBlack = evaluateEach(BLACK, BP) * DEFENCE_VALUE;
+        value += evaluateEachWhite - evaluateEachBlack;
+
+        // Empty columns.
+        int emptyFilesWhite = evaluateEmptyFiles(WP);
+        int emptyFilesBlack = evaluateEmptyFiles(BP);
+
+        value = (sideToMove == WHITE ? value : -value);
+
+        if (false) {
+            display();
+            System.out.println();
+            System.out.println(String.format("               | WHITE | BLACK"));
+            System.out.println(String.format("=============================="));
+            System.out.println(String.format("Piece values   | %5d | %5d", whitePieces, blackPieces));
+            System.out.println(String.format("Protection     | %5d | %5d", evaluateEachWhite, evaluateEachBlack));
+            System.out.println(String.format("Empty files    | %5d | %5d", emptyFilesWhite, emptyFilesBlack));
+            //System.out.println(String.format("Empty file pen.| %5d | %5d",
+            //        emptyFilesScores[WHITE], emptyFilesScores[BLACK]));
+            System.out.println(String.format("=============================="));
+            System.out.println(String.format("Total          | %d", value));
+        }
+
+        return value;
+    }
+
+    private static int evaluateEmptyFiles(long bitboard) {
+        int value = 0;
+        for (long file : FILES) {
+            if ((file & bitboard) == 0) value += EMPTY_COLUMN_PENALITY;
+        }
+        return value;
+    }
+
+    private static int evaluateEach(int color, long us) {
+        long b = us;
+
+        int protectionValue = 0;
+
+        while (b != 0) {
+            long squareBit = Long.highestOneBit(b);
+            b &= ~squareBit;
+            int square = Long.numberOfTrailingZeros(squareBit);
+
+            int file = FILE_OF[square];
+            int rank = RANK_OF[square];
+
+            // For pieces NOT on backrank.
+            if (rank != 0 && rank != 7) {
+                long adjacentFiles = ADJACENT_FILES[file];
+                long backrank = (color == WHITE ? RANKS[rank-1] : RANKS[rank+1]);
+                long protection = (adjacentFiles | FILES[file]) & backrank & us;
+
+                protectionValue += Long.bitCount(protection);
+            }
+        }
+
+        return protectionValue;
     }
 
     public Move isLegalMove(String strMove) {

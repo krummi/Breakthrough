@@ -11,7 +11,7 @@ import java.util.Random;
  *
  * @author Hrafn Eiriksson <hrafne (at) gmail.com>
  */
-public class AgentDiscovery implements Agent {
+public class AgentDiscoveryBefore implements Agent {
 
     // Constants
     private static final int INFINITY_VALUE   = 10001;
@@ -35,17 +35,17 @@ public class AgentDiscovery implements Agent {
     private long        qnodes;
     private long        transHits;
 
-    public  DiscoveryState     state;
+    public DiscoveryState      state;
     private TranspositionTable transTable;
 
-    public AgentDiscovery() {
+    public AgentDiscoveryBefore() {
         m_silent = true;
         m_pv = new DiscoveryPV(MAX_SEARCH_DEPTH + 1);
         m_depthLimit = m_nodeLimit = m_timeLimit = 0;
 
         // State and transposition table.
         state = new DiscoveryState();
-        transTable = new TranspositionTable(2 << 20);
+        transTable = new TranspositionTable(2 << 18);
     }
 
     /*
@@ -142,7 +142,7 @@ public class AgentDiscovery implements Agent {
         // Terminal position?
         if (state.isTerminal()) {
             abort = reachedALimit();
-            return state.getEvaluationNew();
+            return state.getEvaluation();
         }
 
         // Horizon? Quiescence search!
@@ -231,9 +231,9 @@ public class AgentDiscovery implements Agent {
         nodes++;
         qnodes++;
 
-        if (state.isTerminal()) return state.getEvaluationNew();
+        if (state.isTerminal()) return state.getEvaluation();
 
-        int eval = state.getEvaluationNew();
+        int eval = state.getEvaluation();
         if (eval >= beta) {
             return beta;
         }
@@ -323,7 +323,7 @@ public class AgentDiscovery implements Agent {
                 //     NOT on ranks 1 and 2 for WHITE and 7 and 8 for BLACK.
                 //     Extra score for pieces that are backed up by the same color.
                 if ((color == WHITE && squareRank != 1 && squareRank != 2) ||
-                    (color == BLACK && squareRank != 7 && squareRank != 8)) {
+                        (color == BLACK && squareRank != 7 && squareRank != 8)) {
                     for (int inc : DEFENSE_INC[color]) {
                         int newSquare = square + inc;
                         if (board[newSquare] == color) {

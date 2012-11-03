@@ -5,8 +5,15 @@ public class Evaluator {
     public static void main(String[] args) {
 
         String setup = null;
-        setup = "bbbbbbbbbbbbbbbb................................wwwwwwwwwwwwwwww 0";
-        setup = "b........wb.bb..bb.b.bb.........b....w...w.....ww..w....w.ww..ww 0";
+        //setup = "bbbbbbbbbbbbbbbb................................wwwwwwwwwwwwwwww 0";
+        setup = ".b.......b....bb.bbbbb.bb..........w.w.ww..w.....w.....wwww.ww.w 1" +
+                "";
+        AgentDiscovery discovery = new AgentDiscovery();
+        BreakthroughState state = new BreakthroughState(8, 8);
+        state.setup(setup);
+        Move m = discovery.playMove(state, new Game(state));
+        System.out.println("mani!");
+
 
         /*
         String setup =
