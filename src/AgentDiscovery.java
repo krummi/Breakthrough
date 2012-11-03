@@ -164,11 +164,9 @@ public class AgentDiscovery implements Agent {
         // Normal search
         int scoreType = SCORE_LOWER;
         int bestMove = DiscoveryMove.MOVE_NONE;
-        int move = DiscoveryMove.MOVE_NONE;
         int bestValue = Integer.MIN_VALUE;
         ArrayList<Integer> moves = state.getAllMoves(firstMoveToLookAt);
-        for (int i = 0; i < moves.size(); i++) {
-            move = moves.get(i);
+        for (int move : moves) {
             state.make(move);
             assert Zobrist.getZobristKey(state) == state.key;
             eval = -search(ply + 1, depth - 1, -beta, -alpha, DiscoveryMove.MOVE_NONE);
@@ -205,15 +203,13 @@ public class AgentDiscovery implements Agent {
             */
         }
 
-        assert move != DiscoveryMove.MOVE_NONE;
+        assert bestMove != DiscoveryMove.MOVE_NONE;
 
         // Updates the transposition table.
         if (scoreType == SCORE_EXACT) {
             transTable.put(state.key, SCORE_EXACT, depth, eval, bestMove);
-        } else if (scoreType == SCORE_LOWER) {
-            transTable.put(state.key, SCORE_LOWER, depth, eval, bestMove);
         } else {
-            assert false : "What?";
+            transTable.put(state.key, SCORE_LOWER, depth, eval, bestMove);
         }
 
         return bestValue;
