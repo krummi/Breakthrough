@@ -173,8 +173,8 @@ public class OldState implements State {
         // Setup the initial FEN.
         setup(fen);
 
-        // Generate a Zobrist key for the board.
-        // key = Zobrist.getZobristKey(this);
+        // Generate a DiscoveryZobrist key for the board.
+        // key = DiscoveryZobrist.getZobristKey(this);
         System.out.println(key);
     }
 
@@ -256,7 +256,7 @@ public class OldState implements State {
         sideToMove = oppColor(sideToMove);
 
         // Update the hash-key.
-        key ^= Zobrist.SIDE_TO_MOVE;
+        key ^= DiscoveryZobrist.SIDE_TO_MOVE;
     }
 
     @Override
@@ -270,7 +270,7 @@ public class OldState implements State {
         sideToMove = oppColor(sideToMove);
 
         // Update the hash-key.
-        key ^= Zobrist.SIDE_TO_MOVE;
+        key ^= DiscoveryZobrist.SIDE_TO_MOVE;
 
         // Puts the piece back to its initial location (from) and clears the "to"-square:
         clearSquare(to, true);
@@ -414,7 +414,7 @@ public class OldState implements State {
 
         if (rehash) {
             // Adds this piece on this square to the hash-key:
-            key ^= Zobrist.PIECES[color][square];
+            key ^= DiscoveryZobrist.PIECES[color][square];
         }
 
         // Updates the piece list.
@@ -432,7 +432,7 @@ public class OldState implements State {
         // Retracts the hashing.
         if (rehash) {
             // Undoes this piece on this square from the hash-key:
-            key ^= Zobrist.PIECES[color][square];
+            key ^= DiscoveryZobrist.PIECES[color][square];
         }
 
         // Updates the piece-list.

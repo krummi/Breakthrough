@@ -73,11 +73,11 @@ public class TranspositionTable {
 
     public void putLeaf(long key, int eval, int alpha, int beta) {
         if (eval >= beta) {
-            put(key, OldState.SCORE_CUT, 0, eval, DiscoveryMove.MOVE_NONE);
+            put(key, AgentDiscovery.SCORE_UPPER, 0, eval, DiscoveryMove.MOVE_NONE);
         } else if (eval <= alpha) {
-            put(key, OldState.SCORE_ALL, 0, eval, DiscoveryMove.MOVE_NONE);
+            put(key, AgentDiscovery.SCORE_LOWER, 0, eval, DiscoveryMove.MOVE_NONE);
         } else {
-            put(key, OldState.SCORE_EXACT, 0, eval, DiscoveryMove.MOVE_NONE);
+            put(key, AgentDiscovery.SCORE_EXACT, 0, eval, DiscoveryMove.MOVE_NONE);
         }
     }
 

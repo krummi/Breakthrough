@@ -27,14 +27,14 @@ public class Evaluator {
                 "wwwwwwww 1";
         */
 
-        // Zobrist tester:
+        // DiscoveryZobrist tester:
 
         /*
         BreakthroughState state = new BreakthroughState(8, 8);
         state.setup(setup);
         AgentDiscovery discovery = new AgentDiscovery();
         discovery.state.setup(setup);
-        System.out.println("Initial: " + Zobrist.getZobristKey(discovery.state));
+        System.out.println("Initial: " + DiscoveryZobrist.getZobristKey(discovery.state));
         System.out.println("Key    : " + discovery.state.key);
         discovery.setThinklimit(9, 0, 0);
         Move m = discovery.playMove(state, new Game(state));

@@ -177,7 +177,7 @@ public class AgentDiscoveryBefore implements Agent {
         ArrayList<Integer> moves = state.getAllMoves(firstMoveToLookAt);
         for (int move : moves) {
             state.make(move);
-            assert Zobrist.getZobristKey(state) == state.key;
+            assert DiscoveryZobrist.getZobristKey(state) == state.key;
             eval = -search(ply + 1, depth - 1, -beta, -alpha, firstMove);
             state.retract(move);
             if (abort) { break; }

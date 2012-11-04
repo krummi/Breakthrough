@@ -204,18 +204,18 @@ public class DiscoveryState {
         // TODO: CODE DUPLICATION OF DEATH.
         if (sideToMove == WHITE) {
             // Clears the "from" square.
-            WP &= ~(1L << from); key ^= Zobrist.PIECES[WHITE][from];
+            WP &= ~(1L << from); key ^= DiscoveryZobrist.PIECES[WHITE][from];
 
             // Clear the opponents "to" square in case of a capture.
             if (capture) {
-                BP &= ~(1L << to); key ^= Zobrist.PIECES[BLACK][to];
+                BP &= ~(1L << to); key ^= DiscoveryZobrist.PIECES[BLACK][to];
                 if (Long.bitCount(BP) == 0) {
                     result = Result.Loss;
                 }
             }
 
             // Put the piece to the "to" square.
-            WP |= (1L << to); key ^= Zobrist.PIECES[WHITE][to];
+            WP |= (1L << to); key ^= DiscoveryZobrist.PIECES[WHITE][to];
 
             // Checks if "to" square was on rank 1 or rank 8, if was: loss.
             if ((WP & RANK_8) != 0) { // omg (WP & RANK_8) > 0 => A LOT of debugging effort.
@@ -223,18 +223,18 @@ public class DiscoveryState {
             }
         } else {
             // Clears the "from" square.
-            BP &= ~(1L << from); key ^= Zobrist.PIECES[BLACK][from];
+            BP &= ~(1L << from); key ^= DiscoveryZobrist.PIECES[BLACK][from];
 
             // Clear the opponents "to" square in case of a capture.
             if (capture) {
-                WP &= ~(1L << to); key ^= Zobrist.PIECES[WHITE][to];
+                WP &= ~(1L << to); key ^= DiscoveryZobrist.PIECES[WHITE][to];
                 if (Long.bitCount(WP) == 0) {
                     result = Result.Loss;
                 }
             }
 
             // Put the to the "to" square.
-            BP |= (1L << to); key ^= Zobrist.PIECES[BLACK][to];
+            BP |= (1L << to); key ^= DiscoveryZobrist.PIECES[BLACK][to];
 
             // Checks if "to" square was on rank 1 if was: loss.
             if ((BP & RANK_1) != 0) {
@@ -246,7 +246,7 @@ public class DiscoveryState {
         sideToMove = oppColor(sideToMove);
 
         // Update the hash-key.
-        key ^= Zobrist.SIDE_TO_MOVE;
+        key ^= DiscoveryZobrist.SIDE_TO_MOVE;
     }
 
     public void retract(int move) {
@@ -260,20 +260,20 @@ public class DiscoveryState {
         sideToMove = oppColor(sideToMove);
 
         // Update the hash-key.
-        key ^= Zobrist.SIDE_TO_MOVE;
+        key ^= DiscoveryZobrist.SIDE_TO_MOVE;
 
         if (sideToMove == WHITE) {
             // Puts the piece back to its initial location (from) and clears the "to"-square:
-            WP &= ~(1L << to);    key ^= Zobrist.PIECES[WHITE][to];
-            WP |= (1L << from);   key ^= Zobrist.PIECES[WHITE][from];
+            WP &= ~(1L << to);    key ^= DiscoveryZobrist.PIECES[WHITE][to];
+            WP |= (1L << from);   key ^= DiscoveryZobrist.PIECES[WHITE][from];
             if (capture) {
-                BP |= (1L << to); key ^= Zobrist.PIECES[BLACK][to];
+                BP |= (1L << to); key ^= DiscoveryZobrist.PIECES[BLACK][to];
             }
         } else {
-            BP &= ~(1L << to);    key ^= Zobrist.PIECES[BLACK][to];
-            BP |= (1L << from);   key ^= Zobrist.PIECES[BLACK][from];
+            BP &= ~(1L << to);    key ^= DiscoveryZobrist.PIECES[BLACK][to];
+            BP |= (1L << from);   key ^= DiscoveryZobrist.PIECES[BLACK][from];
             if (capture) {
-                WP |= (1L << to); key ^= Zobrist.PIECES[WHITE][to];
+                WP |= (1L << to); key ^= DiscoveryZobrist.PIECES[WHITE][to];
             }
         }
 
@@ -389,6 +389,7 @@ public class DiscoveryState {
         // Empty columns.
         int emptyFilesWhite = evaluateEmptyFiles(WP);
         int emptyFilesBlack = evaluateEmptyFiles(BP);
+        value += emptyFilesWhite - emptyFilesBlack;
 
         value = (sideToMove == WHITE ? value : -value);
 
@@ -399,12 +400,13 @@ public class DiscoveryState {
             System.out.println(String.format("=============================="));
             System.out.println(String.format("Piece values   | %5d | %5d", whitePieces, blackPieces));
             System.out.println(String.format("Protection     | %5d | %5d", evaluateEachWhite, evaluateEachBlack));
-            System.out.println(String.format("Empty files    | %5d | %5d", emptyFilesWhite, emptyFilesBlack));
+            System.out.println(String.format("FILES          | %5d | %5d", emptyFilesWhite, emptyFilesBlack));
             //System.out.println(String.format("Empty file pen.| %5d | %5d",
             //        emptyFilesScores[WHITE], emptyFilesScores[BLACK]));
             System.out.println(String.format("=============================="));
             System.out.println(String.format("Total          | %d", value));
         }
+
 
         return value;
     }
@@ -412,7 +414,7 @@ public class DiscoveryState {
     private static int evaluateEmptyFiles(long bitboard) {
         int value = 0;
         for (long file : FILES) {
-            if ((file & bitboard) == 0) value += EMPTY_COLUMN_PENALITY;
+            value += Math.abs(2 - Long.bitCount(file & bitboard)) * EMPTY_COLUMN_PENALITY;
         }
         return value;
     }
@@ -434,7 +436,7 @@ public class DiscoveryState {
             if (rank != 0 && rank != 7) {
                 long adjacentFiles = ADJACENT_FILES[file];
                 long backrank = (color == WHITE ? RANKS[rank-1] : RANKS[rank+1]);
-                long protection = (adjacentFiles | FILES[file]) & backrank & us;
+                long protection = (FILES[file]) & backrank & us;
 
                 protectionValue += Long.bitCount(protection);
             }
@@ -471,7 +473,7 @@ public class DiscoveryState {
         result = Result.Unknown;
 
         // Update hash key.
-        key = Zobrist.getZobristKey(this);
+        key = DiscoveryZobrist.getZobristKey(this);
 
         // TODO: Validate legality?
         return true;
